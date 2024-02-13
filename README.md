@@ -12,7 +12,7 @@ This project aims to create a large dataset of job postings on Upwork for future
 - Remove duplicate job listings based on the job link.
 - Save the dataset as a CSV file.
 
-## Key Responsibilities
+## Key Responsibilities 
 
 - Ensure that the RSS feeds are fetched and saved correctly.
 - Handle any errors that occur during the parsing or processing of job data.
