@@ -218,6 +218,7 @@ def executor():
         ),
         index=False,
         quoting=csv.QUOTE_NONNUMERIC,
+        encoding="utf-8",
     )
 
 
