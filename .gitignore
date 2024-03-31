@@ -1,4 +1,5 @@
 .env
+.venv
 Upwork_Jobs/*
 */layer/*
 user_api/env/*
