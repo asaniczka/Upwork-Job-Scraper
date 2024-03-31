@@ -97,7 +97,16 @@ def extract_job_data(page: BeautifulSoup, url: HttpUrl) -> JobModel:
 
     description = page.select_one("section div.break.mt-2 p").get_text(strip=True)
 
-    print(description)
+    pricing_determiner = page.select_one(
+        "ul.features li:first-child div"
+    ).get_attribute_list("data-cy")
+    
+    if pricing_determiner == "fixed-price":
+        is_hourly = False
+    else:
+        is_hourly = True
+
+    print(pricing_determiner)
 
     return 1
 
