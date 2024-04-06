@@ -25,12 +25,12 @@ class ClientModel(BaseModel):
     client_join_date: datetime
     client_jobs_posted: int | None = None
     client_hire_rate: float | None = None
+    cleint_open_jobs: int | None = None
     client_total_spent: float | None = None
     client_total_hires: int | None = None
+    client_active_hires: int | None = None
     client_avg_hourly_rate: float | None = None
     client_total_paid_hours: int | None = None
-    client_company_size: str | None = None
-    client_industry: str | None = None
 
 
 class JobModel(BaseModel):
@@ -92,7 +92,7 @@ def extract_fixed_price_data(page: BeautifulSoup, url: HttpUrl) -> dict:
 
     try:
         budget = page.select_one("ul.features li:first-child p").get_text(strip=True)
-        budget = int(budget)
+        budget = float(budget.replace("$", ""))
     except Exception as e:
         print(f"Error extracting fixed price for  {url}: {e}")
         budget = None
@@ -221,6 +221,72 @@ def extract_proposal_data(page: BeautifulSoup, url: HttpUrl) -> dict:
     return return_candidate
 
 
+def extract_client_data(page: BeautifulSoup, url: HttpUrl) -> dict:
+    """
+    Extracts client data from the given job posting
+    """
+    client_location = page.select_one("li[data-qa=client-location] strong").get_text(
+        strip=True
+    )
+
+    client_join_date_str = page.select_one(
+        "div[data-qa=client-contract-date]"
+    ).get_text(strip=True)
+    client_join_date_str = client_join_date_str.split("since")[-1]
+    client_join_date = dateparser.parse(client_join_date_str, languages=["en"])
+
+    client_job_posting_stats = page.select_one("li[data-qa=client-job-posting-stats]")
+    jobs_posted_str = client_job_posting_stats.select_one("strong").get_text(strip=True)
+    jobs_posted = re.search(r"(\d+)", jobs_posted_str).group(1)
+    jobs_posted = int(jobs_posted)
+
+    hire_rate_str = client_job_posting_stats.select_one("div").get_text(strip=True)
+
+    hire_rate = re.search(r"(\d+)", hire_rate_str.split(", ")[0]).group(1)
+    hire_rate = float(hire_rate)
+    open_jobs = re.search(r"(\d+)", hire_rate_str.split(", ")[1]).group(1)
+    open_jobs = int(open_jobs)
+    # fmt:off
+    try:
+        client_spent_str = page.select_one("strong[data-qa=client-spend]").get_text(strip=True)
+        client_spent = re.search(r"(\d+)", client_spent_str).group(1)
+        client_spent = int(client_spent)
+        if "K" in client_spent_str:
+            client_spent = client_spent * 1000
+
+        client_hires_str = page.select_one("div[data-qa=client-hires]").get_text(strip=True)
+
+        total_hires = re.search(r"(\d+)", client_hires_str.split(", ")[0]).group(1)
+        total_hires = int(total_hires)
+
+        active_hires = re.search(r"(\d+)", client_hires_str.split(", ")[1]).group(1)
+        active_hires = int(active_hires)
+    except Exception as e:
+        print(f"Error extracting client_spent or active_hires or total_hires for {url}: {e}")
+        client_spent = None
+        active_hires = None
+        total_hires = None
+    
+    try:
+        client_hourly_rate_str = page.select_one("strong[data-qa=client-hourly-rate]").get_text(strip=True)
+        client_hourly_rate_str = client_hourly_rate_str.split("/hr")[0].strip()
+        client_hourly_rate = float(client_hourly_rate_str.replace("$", ""))
+    except Exception as e:
+        print(f"Error extracting client_hourly_rate for {url}: {e}")
+        client_hourly_rate = None
+
+    
+    try:
+        client_total_paid_hrs_str = page.select_one("div[data-qa=client-hours]").get_text(strip=True)
+        client_total_paid_hrs = float(client_total_paid_hrs_str.split(" ")[0].replace(",", ""))
+    except Exception as e:
+        print(f"Error extracting client_total_paid_hrs_str for {url}: {e}")
+        client_total_paid_hrs = None
+    # fmt:on
+
+    print(client_total_paid_hrs_str, client_total_paid_hrs)
+
+
 def handler_extract_job_data(page: BeautifulSoup, url: HttpUrl) -> JobModel:
     """
     Main extractor for job data
@@ -261,7 +327,7 @@ def handler_extract_job_data(page: BeautifulSoup, url: HttpUrl) -> JobModel:
         **proposal_data,
     )
 
-    print(job_data)
+    extract_client_data(page, url)
     return 1
 
 
@@ -289,6 +355,6 @@ def executor(url: HttpUrl):
 if __name__ == "__main__":
     URL_FIXED = "https://www.upwork.com/jobs/Create-200-technical-structural-section-for-small-Architecture-project_%7E01b5acb92967295a3e?source=rss"
 
-    URL_HOURLY = "https://www.upwork.com/jobs/Create-landing-page-through-Shopify_%7E012a0ec9d047034632?source=rss"
+    URL_HOURLY = "https://www.upwork.com/freelance-jobs/apply/English-Speakers-Wanted-Voice-Actor-Vtuber_~0135f3835eb0fa078d"
 
-    executor(URL_FIXED)
+    executor(URL_HOURLY)
