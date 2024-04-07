@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 from playwright.sync_api import sync_playwright
 import dateparser
 from rich import print
+import asaniczka
 
 
 class ClientModel(BaseModel):
@@ -21,12 +22,13 @@ class ClientModel(BaseModel):
     pydantic model to store client data
     """
 
-    client_location: str
+    client_country: str
+    client_city: str | None = None
     client_join_date: datetime
     client_jobs_posted: int | None = None
     client_hire_rate: float | None = None
-    cleint_open_jobs: int | None = None
-    client_total_spent: float | None = None
+    client_open_jobs: int | None = None
+    client_total_spent: int | None = None
     client_total_hires: int | None = None
     client_active_hires: int | None = None
     client_avg_hourly_rate: float | None = None
@@ -85,6 +87,28 @@ def get_page(url: HttpUrl) -> str | None:
     return None
 
 
+def extract_basic_job_data(page: BeautifulSoup, url: HttpUrl) -> dict:
+    """
+    Extracts basic job data
+    """
+    title = page.select_one("header h4").get_text(strip=True)
+
+    posted_ago = page.select_one("div[data-test=PostedOn] span").get_text(strip=True)
+    posted_time_utc = dateparser.parse(
+        posted_ago, settings={"TIMEZONE": "+0530", "TO_TIMEZONE": "UTC"}
+    )
+
+    description = page.select_one("section div.break.mt-2 p").get_text(
+        strip=True, separator="\n\n"
+    )
+
+    return {
+        "title": title,
+        "posted_time": posted_time_utc,
+        "description": description,
+    }
+
+
 def extract_fixed_price_data(page: BeautifulSoup, url: HttpUrl) -> dict:
     """
     Extracts fixed price data
@@ -94,7 +118,7 @@ def extract_fixed_price_data(page: BeautifulSoup, url: HttpUrl) -> dict:
         budget = page.select_one("ul.features li:first-child p").get_text(strip=True)
         budget = float(budget.replace("$", ""))
     except Exception as e:
-        print(f"Error extracting fixed price for  {url}: {e}")
+        print(f"Error extracting fixed price for  {url}: {asaniczka.format_error(e)}")
         budget = None
 
     try:
@@ -102,7 +126,9 @@ def extract_fixed_price_data(page: BeautifulSoup, url: HttpUrl) -> dict:
             "ul.features li:nth-child(2) strong"
         ).get_text(strip=True)
     except Exception as e:
-        print(f"Error extracting freelancer_experince_level for  {url}: {e}")
+        print(
+            f"Error extracting freelancer_experince_level for  {url}: {asaniczka.format_error(e)}"
+        )
         freelancer_experince_level = None
 
     try:
@@ -110,7 +136,7 @@ def extract_fixed_price_data(page: BeautifulSoup, url: HttpUrl) -> dict:
             strip=True
         )
     except Exception as e:
-        print(f"Error extracting project_type for  {url}: {e}")
+        print(f"Error extracting project_type for  {url}: {asaniczka.format_error(e)}")
 
         project_type = None
 
@@ -133,7 +159,7 @@ def extract_hourly_data(page: BeautifulSoup, url: HttpUrl) -> dict:
         hourly_low = hourly_low.split("-")[0].replace("$", "").strip()
         hourly_low = float(hourly_low)
     except Exception as e:
-        print(f"Error extracting hourly_low for  {url}: {e}")
+        print(f"Error extracting hourly_low for  {url}: {asaniczka.format_error(e)}")
         hourly_low = None
     try:
         hourly_high = page.select_one("ul.features li:nth-child(4)").get_text(
@@ -146,7 +172,7 @@ def extract_hourly_data(page: BeautifulSoup, url: HttpUrl) -> dict:
         
         hourly_high = float(hourly_high)
     except Exception as e:
-        print(f"Error extracting hourly_high for  {url}: {e}")
+        print(f"Error extracting hourly_high for  {url}: {asaniczka.format_error(e)}")
         hourly_high = None
 
     try:
@@ -154,7 +180,7 @@ def extract_hourly_data(page: BeautifulSoup, url: HttpUrl) -> dict:
             .select_one("ul.features li:nth-child(3) strong")\
             .get_text(strip=True)
     except Exception as e:
-        print(f"Error extracting freelancer_experince_level for  {url}: {e}")
+        print(f"Error extracting freelancer_experince_level for  {url}: {asaniczka.format_error(e)}")
         freelancer_experince_level = None
 
     try:
@@ -162,17 +188,17 @@ def extract_hourly_data(page: BeautifulSoup, url: HttpUrl) -> dict:
             .select_one("ul.features li:nth-child(2) strong")\
             .get_text(strip=True)
         
-        duration_num = re.search(r"(\d+)", duration).group(1)
+        duration_num = re.search(r"(\d+[-\d]*)", duration).group(1).replace("-","")
         duration_months = duration_num[-1]
     except Exception as e:
-        print(f"Error extracting duration for  {url}: {e}")
+        print(f"Error extracting duration for  {url}: {asaniczka.format_error(e)}")
         duration_months = None
 
     try:
         project_type = page.select_one("ul.features li:nth-child(6) strong")\
                             .get_text(strip=True)
     except Exception as e:
-        print(f"Error extracting project_type for  {url}: {e}")
+        print(f"Error extracting project_type for  {url}: {asaniczka.format_error(e)}")
 
         project_type = None
     # fmt:on
@@ -193,23 +219,48 @@ def extract_proposal_data(page: BeautifulSoup, url: HttpUrl) -> dict:
     Extracts proposal data from the description
     """
 
-    proposal_count = page.select_one(
-        ".client-activity-items li:nth-child(1) span.value"
-    ).get_text(strip=True)
+    # fmt: off
+    client_activity_items = page.select_one(".client-activity-items")\
+                                .get_text(strip=True)
+    viewed_by_client_in_dom =  bool("Last viewed by client" in client_activity_items)
+    # fmt: on
 
-    proposal_count = re.search(r"(\d+)", proposal_count).group(1)
+    if viewed_by_client_in_dom:
+        proposal_count = page.select_one(
+            ".client-activity-items li:nth-child(1) span.value"
+        ).get_text(strip=True)
 
-    interviewing = page.select_one(
-        ".client-activity-items li:nth-child(2) div"
-    ).get_text(strip=True)
+        proposal_count = re.search(r"(\d+)", proposal_count).group(1)
 
-    invites_sent = page.select_one(
-        ".client-activity-items li:nth-child(3) div"
-    ).get_text(strip=True)
+        interviewing = page.select_one(
+            ".client-activity-items li:nth-child(3) div"
+        ).get_text(strip=True)
 
-    unanswered_invites = page.select_one(
-        ".client-activity-items li:nth-child(4) div"
-    ).get_text(strip=True)
+        invites_sent = page.select_one(
+            ".client-activity-items li:nth-child(4) div"
+        ).get_text(strip=True)
+
+        unanswered_invites = page.select_one(
+            ".client-activity-items li:nth-child(5) div"
+        ).get_text(strip=True)
+    else:
+        proposal_count = page.select_one(
+            ".client-activity-items li:nth-child(1) span.value"
+        ).get_text(strip=True)
+
+        proposal_count = re.search(r"(\d+)", proposal_count).group(1)
+
+        interviewing = page.select_one(
+            ".client-activity-items li:nth-child(2) div"
+        ).get_text(strip=True)
+
+        invites_sent = page.select_one(
+            ".client-activity-items li:nth-child(3) div"
+        ).get_text(strip=True)
+
+        unanswered_invites = page.select_one(
+            ".client-activity-items li:nth-child(4) div"
+        ).get_text(strip=True)
 
     return_candidate = {
         "proposals": proposal_count,
@@ -221,13 +272,150 @@ def extract_proposal_data(page: BeautifulSoup, url: HttpUrl) -> dict:
     return return_candidate
 
 
-def extract_client_data(page: BeautifulSoup, url: HttpUrl) -> dict:
+def extract_client_posting_stats(page: BeautifulSoup, url: HttpUrl) -> dict:
     """
-    Extracts client data from the given job posting
+    extracts a clients' upword posting activity
     """
-    client_location = page.select_one("li[data-qa=client-location] strong").get_text(
+
+    try:
+        client_job_posting_stats = page.select_one(
+            "li[data-qa=client-job-posting-stats]"
+        )
+        jobs_posted_str = client_job_posting_stats.select_one("strong").get_text(
+            strip=True
+        )
+        jobs_posted = re.search(r"(\d+)", jobs_posted_str).group(1)
+        jobs_posted = int(jobs_posted)
+
+        hire_rate_str = client_job_posting_stats.select_one("div").get_text(strip=True)
+
+        hire_rate = re.search(r"(\d+)", hire_rate_str.split(", ")[0]).group(1)
+        hire_rate = float(hire_rate)
+
+        open_jobs = re.search(r"(\d+)", hire_rate_str.split(", ")[1]).group(1)
+        open_jobs = int(open_jobs)
+    except AttributeError:
+        open_jobs = None
+        hire_rate = None
+        jobs_posted = None
+    except Exception as e:
+        print(
+            f"error extracting hire_rate,open_jobs or jobs_posted on {url}: {asaniczka.format_error(e)}"
+        )
+        open_jobs = None
+        hire_rate = None
+        jobs_posted = None
+
+    return {
+        "client_jobs_posted": jobs_posted,
+        "client_hire_rate": hire_rate,
+        "client_open_jobs": open_jobs,
+    }
+
+
+def extract_client_spending_stats(page: BeautifulSoup, url: HttpUrl) -> dict:
+    """
+    Extracts client's spending stats
+    """
+
+    try:
+        client_spent_str = page.select_one("strong[data-qa=client-spend]").get_text(
+            strip=True
+        )
+        client_spent = re.search(r"(\d+[\.\d]*)", client_spent_str).group(1)
+        client_spent = float(client_spent)
+        if "K" in client_spent_str:
+            client_spent = client_spent * 1000
+        client_spent = int(client_spent)
+
+        client_hires_str = page.select_one("div[data-qa=client-hires]").get_text(
+            strip=True
+        )
+
+        total_hires = re.search(r"(\d+)", client_hires_str.split(", ")[0]).group(1)
+        total_hires = int(total_hires)
+
+        active_hires = re.search(r"(\d+)", client_hires_str.split(", ")[1]).group(1)
+        active_hires = int(active_hires)
+    except AttributeError:
+        client_spent = None
+        active_hires = None
+        total_hires = None
+    except Exception as e:
+        print(
+            f"Error extracting client_spent or active_hires or total_hires for {url}: {asaniczka.format_error(e)}"
+        )
+        client_spent = None
+        active_hires = None
+        total_hires = None
+
+    return {
+        "client_total_spent": client_spent,
+        "client_total_hires": total_hires,
+        "client_active_hires": active_hires,
+    }
+
+
+def extract_client_rates(page: BeautifulSoup, url: HttpUrl) -> dict:
+    """
+    Extracts a clients historic spending rates
+    """
+
+    try:
+        client_hourly_rate_str = page.select_one(
+            "strong[data-qa=client-hourly-rate]"
+        ).get_text(strip=True)
+        client_hourly_rate_str = client_hourly_rate_str.split("/hr")[0].strip()
+        client_hourly_rate = float(client_hourly_rate_str.replace("$", ""))
+    except AttributeError:
+        client_hourly_rate = None
+    except Exception as e:
+        print(
+            f"Error extracting client_hourly_rate for {url}: {asaniczka.format_error(e)}"
+        )
+        client_hourly_rate = None
+
+    try:
+        client_total_paid_hrs_str = page.select_one(
+            "div[data-qa=client-hours]"
+        ).get_text(strip=True)
+        client_total_paid_hrs = float(
+            client_total_paid_hrs_str.split(" ")[0].replace(",", "")
+        )
+    except AttributeError:
+        client_total_paid_hrs = None
+    except Exception as e:
+        print(
+            f"Error extracting client_total_paid_hrs_str for {url}: {asaniczka.format_error(e)}"
+        )
+        client_total_paid_hrs = None
+
+    return {
+        "client_avg_hourly_rate": client_hourly_rate,
+        "client_total_paid_hours": client_total_paid_hrs,
+    }
+
+
+def extract_basic_client_data(page: BeautifulSoup, url: HttpUrl) -> dict:
+    """
+    Extracts basic client data
+    """
+
+    client_country = page.select_one("li[data-qa=client-location] strong").get_text(
         strip=True
     )
+    try:
+        client_city = page.select_one(
+            "li[data-qa=client-location] div span:first-child"
+        ).get_text(strip=True)
+
+        if not client_city:
+            client_city = None
+
+    except AttributeError:
+        client_city = None
+    except Exception as e:
+        print(f"Error extracting client_city for {url}: {asaniczka.format_error(e)}")
 
     client_join_date_str = page.select_one(
         "div[data-qa=client-contract-date]"
@@ -235,71 +423,37 @@ def extract_client_data(page: BeautifulSoup, url: HttpUrl) -> dict:
     client_join_date_str = client_join_date_str.split("since")[-1]
     client_join_date = dateparser.parse(client_join_date_str, languages=["en"])
 
-    client_job_posting_stats = page.select_one("li[data-qa=client-job-posting-stats]")
-    jobs_posted_str = client_job_posting_stats.select_one("strong").get_text(strip=True)
-    jobs_posted = re.search(r"(\d+)", jobs_posted_str).group(1)
-    jobs_posted = int(jobs_posted)
+    return {
+        "client_country": client_country,
+        "client_city": client_city,
+        "client_join_date": client_join_date,
+    }
 
-    hire_rate_str = client_job_posting_stats.select_one("div").get_text(strip=True)
 
-    hire_rate = re.search(r"(\d+)", hire_rate_str.split(", ")[0]).group(1)
-    hire_rate = float(hire_rate)
-    open_jobs = re.search(r"(\d+)", hire_rate_str.split(", ")[1]).group(1)
-    open_jobs = int(open_jobs)
-    # fmt:off
-    try:
-        client_spent_str = page.select_one("strong[data-qa=client-spend]").get_text(strip=True)
-        client_spent = re.search(r"(\d+)", client_spent_str).group(1)
-        client_spent = int(client_spent)
-        if "K" in client_spent_str:
-            client_spent = client_spent * 1000
+def handler_extract_client_data(page: BeautifulSoup, url: HttpUrl) -> ClientModel:
+    """
+    Extracts client data from the given job posting
+    """
 
-        client_hires_str = page.select_one("div[data-qa=client-hires]").get_text(strip=True)
+    basic_client_data = extract_basic_client_data(page, url)
+    posting_stats = extract_client_posting_stats(page, url)
+    spending_stats = extract_client_spending_stats(page, url)
+    client_rates = extract_client_rates(page, url)
 
-        total_hires = re.search(r"(\d+)", client_hires_str.split(", ")[0]).group(1)
-        total_hires = int(total_hires)
+    client_data = ClientModel(
+        **basic_client_data,
+        **posting_stats,
+        **spending_stats,
+        **client_rates,
+    )
 
-        active_hires = re.search(r"(\d+)", client_hires_str.split(", ")[1]).group(1)
-        active_hires = int(active_hires)
-    except Exception as e:
-        print(f"Error extracting client_spent or active_hires or total_hires for {url}: {e}")
-        client_spent = None
-        active_hires = None
-        total_hires = None
-    
-    try:
-        client_hourly_rate_str = page.select_one("strong[data-qa=client-hourly-rate]").get_text(strip=True)
-        client_hourly_rate_str = client_hourly_rate_str.split("/hr")[0].strip()
-        client_hourly_rate = float(client_hourly_rate_str.replace("$", ""))
-    except Exception as e:
-        print(f"Error extracting client_hourly_rate for {url}: {e}")
-        client_hourly_rate = None
-
-    
-    try:
-        client_total_paid_hrs_str = page.select_one("div[data-qa=client-hours]").get_text(strip=True)
-        client_total_paid_hrs = float(client_total_paid_hrs_str.split(" ")[0].replace(",", ""))
-    except Exception as e:
-        print(f"Error extracting client_total_paid_hrs_str for {url}: {e}")
-        client_total_paid_hrs = None
-    # fmt:on
-
-    print(client_total_paid_hrs_str, client_total_paid_hrs)
+    return client_data
 
 
 def handler_extract_job_data(page: BeautifulSoup, url: HttpUrl) -> JobModel:
     """
     Main extractor for job data
     """
-
-    title = page.select_one("header h4").get_text(strip=True)
-
-    posted_ago = page.select_one("div[data-test=PostedOn] span").get_text(strip=True)
-    posted_time_utc = dateparser.parse(
-        posted_ago, settings={"TIMEZONE": "+0530", "TO_TIMEZONE": "UTC"}
-    )
-
-    description = page.select_one("section div.break.mt-2 p").get_text(strip=True)
 
     pricing_determiner = page.select_one(
         "ul.features li:first-child div"
@@ -315,23 +469,21 @@ def handler_extract_job_data(page: BeautifulSoup, url: HttpUrl) -> JobModel:
     else:
         price_data = extract_hourly_data(page, url)
 
+    basic_job_data = extract_basic_job_data(page, url)
     proposal_data = extract_proposal_data(page, url)
 
     job_data = JobModel(
-        title=title,
-        posted_time=posted_time_utc,
-        description=description,
         is_hourly=is_hourly,
         url=url,
+        **basic_job_data,
         **price_data,
         **proposal_data,
     )
 
-    extract_client_data(page, url)
-    return 1
+    return job_data
 
 
-def handler_parse_page(page: str, url: HttpUrl):
+def handler_parse_page(page: str, url: HttpUrl) -> tuple[JobModel, ClientModel]:
     """
     Cordinates the parsing of the page
     """
@@ -339,6 +491,9 @@ def handler_parse_page(page: str, url: HttpUrl):
     soup = BeautifulSoup(page, "html.parser")
 
     job_data = handler_extract_job_data(soup, url)
+    client_data = handler_extract_client_data(soup, url)
+
+    print(job_data, client_data)
 
 
 def executor(url: HttpUrl):
@@ -357,4 +512,17 @@ if __name__ == "__main__":
 
     URL_HOURLY = "https://www.upwork.com/freelance-jobs/apply/English-Speakers-Wanted-Voice-Actor-Vtuber_~0135f3835eb0fa078d"
 
-    executor(URL_HOURLY)
+    TEST_URL = "https://www.upwork.com/jobs/need-Facebook-ads-expert_%7E0123799d103660d647?source=rss"
+
+    URLS = [
+        "https://www.upwork.com/jobs/Facebook-specialist_%7E015b3e8992269f6354?source=rss",
+        "https://www.upwork.com/jobs/Virtual-Assistance-Germany-German-Deutschland-Deutsch_%7E0101bd8aa02667479f?source=rss",
+        "https://www.upwork.com/jobs/Backend-MERN_%7E01854831a04bbcd1ec?source=rss",
+        "https://www.upwork.com/jobs/PAN12-Chatlog-Extraction_%7E01f3cd26bc8b761b51?source=rss",
+        "https://www.upwork.com/jobs/need-Facebook-ads-expert_%7E0123799d103660d647?source=rss",
+    ]
+
+    executor(TEST_URL)
+
+    # for url in URLS:
+    #     executor(url)
