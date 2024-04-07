@@ -7,3 +7,4 @@ user_api/__pycache__/*
 
 # TEMP
 user_api/*
+__pycache__

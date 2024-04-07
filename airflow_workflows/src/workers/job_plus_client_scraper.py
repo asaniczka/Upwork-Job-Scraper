@@ -5,6 +5,11 @@ My goal is for this to work on requests.
 So each request will call exectuor with a url to scrape, it will scrape and put the data back into the db
 """
 
+import sys
+import os
+
+sys.path.append(os.getcwd())
+
 from datetime import datetime
 import re
 
