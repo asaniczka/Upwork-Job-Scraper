@@ -16,6 +16,10 @@ import dateparser
 from rich import print
 import asaniczka
 
+# ----------------------------------------
+#               MODELS
+# ----------------------------------------
+
 
 class ClientModel(BaseModel):
     """
@@ -55,6 +59,11 @@ class JobModel(BaseModel):
     interviewing: int = 0
     invites_sent: int = 0
     unanswered_invites: int = 0
+
+
+# ----------------------------------------
+#               WORKERS
+# ----------------------------------------
 
 
 def get_page_pw(url: HttpUrl) -> str | None:
@@ -430,6 +439,11 @@ def extract_basic_client_data(page: BeautifulSoup, url: HttpUrl) -> dict:
     }
 
 
+# ----------------------------------------
+#               HANDLERS
+# ----------------------------------------
+
+
 def handler_extract_client_data(page: BeautifulSoup, url: HttpUrl) -> ClientModel:
     """
     Extracts client data from the given job posting
@@ -493,7 +507,7 @@ def handler_parse_page(page: str, url: HttpUrl) -> tuple[JobModel, ClientModel]:
     job_data = handler_extract_job_data(soup, url)
     client_data = handler_extract_client_data(soup, url)
 
-    print(job_data, client_data)
+    return job_data, client_data
 
 
 def executor(url: HttpUrl):
@@ -504,7 +518,7 @@ def executor(url: HttpUrl):
     if not page:
         return
 
-    handler_parse_page(page, url)
+    job_data, client_data = handler_parse_page(page, url)
 
 
 if __name__ == "__main__":
