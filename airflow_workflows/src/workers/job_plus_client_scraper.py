@@ -510,7 +510,7 @@ def handler_parse_page(page: str, url: HttpUrl) -> tuple[JobModel, ClientModel]:
     return job_data, client_data
 
 
-def executor(url: HttpUrl):
+def executor(url: HttpUrl) -> tuple[JobModel, ClientModel]:
     """This is the main entrypoint of the module"""
 
     page = get_page_pw(url)
@@ -520,13 +520,17 @@ def executor(url: HttpUrl):
 
     job_data, client_data = handler_parse_page(page, url)
 
+    return job_data, client_data
+
 
 if __name__ == "__main__":
     URL_FIXED = "https://www.upwork.com/jobs/Create-200-technical-structural-section-for-small-Architecture-project_%7E01b5acb92967295a3e?source=rss"
 
     URL_HOURLY = "https://www.upwork.com/freelance-jobs/apply/English-Speakers-Wanted-Voice-Actor-Vtuber_~0135f3835eb0fa078d"
 
-    TEST_URL = "https://www.upwork.com/jobs/need-Facebook-ads-expert_%7E0123799d103660d647?source=rss"
+    TEST_URL = (
+        "https://www.upwork.com/jobs/Backend-MERN_%7E01854831a04bbcd1ec?source=rss"
+    )
 
     URLS = [
         "https://www.upwork.com/jobs/Facebook-specialist_%7E015b3e8992269f6354?source=rss",
@@ -536,7 +540,8 @@ if __name__ == "__main__":
         "https://www.upwork.com/jobs/need-Facebook-ads-expert_%7E0123799d103660d647?source=rss",
     ]
 
-    executor(TEST_URL)
+    data = executor(TEST_URL)
+    print(data)
 
     # for url in URLS:
     #     executor(url)
