@@ -91,6 +91,8 @@ def convert_response_to_schema(res: str) -> PostingAttributes:
 def entry_extract_attributes(page: str) -> tuple[AIResponse, PostingAttributes]:
     """"""
 
+    print("Extracting attributes from a page")
+
     messages = LLMMessageLog(
         messages=[
             LLMMessage(

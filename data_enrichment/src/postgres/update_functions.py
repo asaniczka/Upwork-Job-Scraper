@@ -1,23 +1,30 @@
 """module to update rows"""
+# pylint:disable=wrong-import-position
 
 import os
+from urllib.parse import quote
 
 import httpx
+from wrapworks import cwdtoenv
+from dotenv import load_dotenv
+
+cwdtoenv()
+load_dotenv()
 
 from src.models.upwork_models import PostingAttributes
 
 
-def update_row(link: str, attributes: PostingAttributes):
+def update_row(url: str, attributes: PostingAttributes):
     """"""
 
-    url = os.getenv("POSTGREST_URL")+"/upwork_filtered_jobs"
+    print(f"Updating row {url}")
 
-    querystring = {"link": link}
+    url = os.getenv("POSTGREST_URL")+"/upwork_filtered_jobs"+"?link=eq."+ quote(url)
 
     payload = {
         "full_description": attributes.job.full_description,
         "client_city": attributes.client.client_city,
-        "client_join_data": attributes.client.client_join_date,
+        "client_join_data": str(attributes.client.client_join_date),
         "client_jobs_posted": attributes.client.client_jobs_posted,
         "client_hire_rate": attributes.client.client_hire_rate,
         "client_open_jobs": attributes.client.client_open_jobs,
@@ -32,9 +39,15 @@ def update_row(link: str, attributes: PostingAttributes):
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
         "Authorization": f"Bearer {os.getenv("SUPABASE_CLIENT_ANON_KEY")}",
         "Content-Type": "application/json",
-        "Prefer": "return=minimal",
     }
 
-    response = httpx.patch(url, json=payload, headers=headers, params=querystring)
+    response = httpx.patch(url, json=payload, headers=headers)
 
-    print(response.text)
+
+if __name__ == "__main__":
+    import json
+
+    url = "https://www.upwork.com/jobs/Azure-Communication-Services-Expert_%7E01ca8dd0ca558e3386?source=rss"
+    with open("attr.json","r",encoding='utf-8') as rf:
+        attr = PostingAttributes(**json.load(rf))
+        update_row(url,attr)

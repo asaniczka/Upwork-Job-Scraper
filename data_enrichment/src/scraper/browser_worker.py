@@ -37,6 +37,8 @@ def get_page(url: str) -> str | None:
     Loads the page using selenium
     """
 
+    print(f"Getting page {url}")
+
     options = uc.ChromeOptions()
     driver = uc.Chrome(
         options=options, user_data_dir=os.getcwd() + "/src/scraper/temp/chrome"

@@ -13,6 +13,8 @@ load_dotenv()
 def get_pending_row() -> str | None:
     """"""
 
+    print(f"Getting a new row")
+    
     url = os.getenv("POSTGREST_URL") + "/upwork_filtered_jobs"
 
     querystring = {"did_augment_client_data": "eq.false", "select": "link","limit":1}

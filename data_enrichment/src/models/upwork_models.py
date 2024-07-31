@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 
-from pydantic import HttpUrl, BaseModel
+from pydantic import HttpUrl, BaseModel, field_serializer
 
 
 class UpworkClient(BaseModel):
@@ -20,6 +20,12 @@ class UpworkClient(BaseModel):
     client_active_hires: int | None = None
     client_avg_hourly_rate: float | None = None
     client_total_paid_hours: int | None = None
+
+    @field_serializer("client_join_date", when_used="json")
+    @classmethod
+    def _date2str(cls, value: datetime) -> str:
+
+        return str(value.date)
 
 
 class UpworkJob(BaseModel):
