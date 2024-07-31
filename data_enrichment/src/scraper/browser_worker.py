@@ -20,23 +20,22 @@ load_dotenv()
 
 
 def get_cookies():
+    """Gets saved cookie to restore the login session"""
     with open("src/scraper/temp/cookies.json", "r", encoding="utf-8") as rf:
         cookies = json.load(rf)
         return cookies
 
 
 def save_cookies(cookies: list[dict]):
+    """Saves cookies for later"""
     with open("src/scraper/temp/cookies.json", "w", encoding="utf-8") as wf:
         json.dump(cookies, wf)
 
 
-def get_page(url: HttpUrl) -> str | None:
+def get_page(url: str) -> str | None:
     """
     Loads the page using selenium
     """
-
-    # with open("src/scraper/temp/pages/90341a983.html", "r", encoding="utf-8") as rf:
-    #     page = rf.read()
 
     options = uc.ChromeOptions()
     driver = uc.Chrome(
@@ -49,7 +48,7 @@ def get_page(url: HttpUrl) -> str | None:
         driver.add_cookie(i)
     driver.refresh()
     time.sleep(10)
-    
+
     source = driver.page_source
     save_cookies(driver.get_cookies())
     driver.close()
