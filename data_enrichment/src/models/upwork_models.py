@@ -13,9 +13,9 @@ class UpworkClient(BaseModel):
     client_city: str | None = None
     client_join_date: datetime
     client_jobs_posted: int | None = None
-    client_hire_rate: float | None = None
+    client_hire_rate: int | None = None
     client_open_jobs: int | None = None
-    client_total_spent: int | None = None
+    client_total_spent_usd: int | None = None
     client_total_hires: int | None = None
     client_active_hires: int | None = None
     client_avg_hourly_rate: float | None = None
@@ -29,7 +29,6 @@ class UpworkJob(BaseModel):
 
     url: HttpUrl | None = None
     title: str
-    posted_time: datetime
     full_description: str | None = None
     is_hourly: bool | None = None
     hourly_low: int | None = None

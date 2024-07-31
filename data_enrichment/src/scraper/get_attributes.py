@@ -19,7 +19,6 @@ import chompjs
 cwdtoenv()
 load_dotenv()
 
-from src.scraper.zyte import zyte_worker
 from src.scraper.browser_worker import get_page
 from src.models.upwork_models import PostingAttributes, OPENAPI_SCHEMA
 from src.models.genai_models import (
@@ -36,9 +35,7 @@ from src.models.genai_models import (
 # ----------------------------------------
 
 
-def invoke_openai(
-    model: ValidLLMModels | str, messages: LLMMessageLog, api_key: str
-) -> AIResponse:
+def invoke_openai(model: ValidLLMModels | str, messages: LLMMessageLog) -> AIResponse:
     """"""
 
     if not isinstance(model, str):
@@ -49,11 +46,11 @@ def invoke_openai(
     payload = {
         "model": model,
         "messages": [x.model_dump() for x in messages.messages],
-        "max_tokens": 1500,
+        "max_tokens": 3000,
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {os.getenv("AZ_OPENAI_API_KEY")}",
     }
 
     with httpx.Client() as client:
@@ -73,11 +70,11 @@ def invoke_openai(
 
 
 def handler_generate_response(
-    messages: LLMMessageLog, model: ValidLLMModels, api_key: str
+    messages: LLMMessageLog, model: ValidLLMModels
 ) -> AIResponse:
     """"""
 
-    response = invoke_openai(model, messages, api_key)
+    response = invoke_openai(model, messages)
     response.calculate_cost(model.value, LLM_COST_PER_TOKEN)
 
     return response
@@ -91,16 +88,14 @@ def convert_response_to_schema(res: str) -> PostingAttributes:
     return schemed_product
 
 
-def entry_convert_to_schema(
-    page: str, api_key: str
-) -> tuple[AIResponse, PostingAttributes]:
+def entry_extract_attributes(page: str) -> tuple[AIResponse, PostingAttributes]:
     """"""
 
     messages = LLMMessageLog(
         messages=[
             LLMMessage(
                 role=LLMRoles.SYSTEM,
-                content="""You are a webpage parser. User will provide you with the getTExt of a webpage. 
+                content="""You are a upwork job parser. User will provide you with the getTExt of a webpage. 
                 Extract all the data to match the schema. Job description must be the full description. Don't truncate.
                 Reply in valid JSON.
                 """,
@@ -121,16 +116,14 @@ def entry_convert_to_schema(
     retries = 0
     while retries < 5:
         try:
-            response = handler_generate_response(
-                messages, ValidLLMModels.OPENAI_GPT4o, api_key
-            )
+            response = handler_generate_response(messages, ValidLLMModels.OPENAI_GPT4o_MINI)
             # add current cost to checkpoint incase validation fails
             if response:
                 running_cost += response.cost
 
-            parsed_product = convert_response_to_schema(response.text)
+            parsed_job = convert_response_to_schema(response.text)
             response.cost = running_cost  # combine cost of failed previous runs
-            return response, parsed_product
+            return response, parsed_job
         except ValidationError:
             retries += 1
             print(f"Error extracting metadata with OpenAI. Retrying...")
@@ -142,4 +135,7 @@ def entry_convert_to_schema(
 
 
 if __name__ == "__main__":
-    pass
+    url = "https://www.upwork.com/jobs/Azure-Communication-Services-Expert_%7E01ca8dd0ca558e3386?source=rss"
+    page = get_page(url)
+    res = entry_extract_attributes(page)
+    print(res)

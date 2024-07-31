@@ -12,6 +12,7 @@ from rich import print
 from wrapworks import timeit, cwdtoenv
 from dotenv import load_dotenv
 import undetected_chromedriver as uc
+from bs4 import BeautifulSoup
 
 
 cwdtoenv()
@@ -34,25 +35,27 @@ def get_page(url: HttpUrl) -> str | None:
     Loads the page using selenium
     """
 
-    with open(
-        "src/scraper/temp/pages/90341a983.html", "r", encoding="utf-8"
-    ) as rf:
-        return rf.read()
+    # with open("src/scraper/temp/pages/90341a983.html", "r", encoding="utf-8") as rf:
+    #     page = rf.read()
 
     options = uc.ChromeOptions()
     driver = uc.Chrome(
         options=options, user_data_dir=os.getcwd() + "/src/scraper/temp/chrome"
     )
     driver.get(url)
+
     cookies = get_cookies()
     for i in cookies:
         driver.add_cookie(i)
     driver.refresh()
-    time.sleep(60)
+    time.sleep(10)
+    
     source = driver.page_source
     save_cookies(driver.get_cookies())
     driver.close()
-    return source
+
+    soup = BeautifulSoup(source, "html.parser")
+    return soup.get_text(separator="\n")
 
 
 if __name__ == "__main__":

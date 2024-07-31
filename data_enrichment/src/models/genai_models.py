@@ -12,11 +12,13 @@ from pydantic import (
 
 LLM_COST_PER_TOKEN = {
     "gpt-4o": {"input": 0.000005, "output": 0.000015},
+    "gpt-4o-mini": {"input": 0.000000150, "output": 0.000000600},
 }
 
 
 class ValidLLMModels(Enum):
     OPENAI_GPT4o = "gpt-4o"
+    OPENAI_GPT4o_MINI = "gpt-4o-mini"
 
 
 class LLMRoles(Enum):
