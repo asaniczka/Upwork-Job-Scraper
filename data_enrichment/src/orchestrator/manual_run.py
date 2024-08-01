@@ -14,12 +14,13 @@ load_dotenv()
 cwdtoenv()
 
 from src.postgres.select_functions import get_pending_row
-from src.postgres.update_functions import update_row
+from src.postgres.update_functions import update_row, update_row_as_done
 from src.scraper.browser_worker import get_page
 from src.scraper.get_attributes import entry_extract_attributes
 
 
 def executor():
+    """"""
 
     while True:
         url = get_pending_row()
@@ -28,9 +29,13 @@ def executor():
             break
 
         page = get_page(url)
-        response, attributes = entry_extract_attributes(page)
-        print(attributes)
-        update_row(url, attributes)
+        try:
+            response, attributes = entry_extract_attributes(page)
+            print(attributes)
+            update_row(url, attributes)
+        except Exception as e:
+            print(f"Unable to extract attributes: {type(e).__name__}: {e}")
+            update_row_as_done(url)
 
 
 if __name__ == "__main__":

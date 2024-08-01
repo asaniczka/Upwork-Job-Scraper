@@ -42,6 +42,24 @@ def update_row(url: str, attributes: PostingAttributes):
     }
 
     response = httpx.patch(url, json=payload, headers=headers)
+     
+def update_row_as_done(url: str):
+    """"""
+
+    print(f"Updating row {url} as done")
+
+    url = os.getenv("POSTGREST_URL")+"/upwork_filtered_jobs"+"?link=eq."+ quote(url)
+
+    payload = {
+        "did_augment_client_data": True,
+    }
+    headers = {
+        "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
+        "Authorization": f"Bearer {os.getenv("SUPABASE_CLIENT_ANON_KEY")}",
+        "Content-Type": "application/json",
+    }
+
+    response = httpx.patch(url, json=payload, headers=headers)
 
 
 if __name__ == "__main__":
