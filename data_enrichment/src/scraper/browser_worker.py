@@ -43,7 +43,7 @@ def get_page(url: str) -> str | None:
     driver = uc.Chrome(
         options=options,
         user_data_dir=os.getcwd() + "/src/scraper/temp/chrome",
-        headless=True,
+        headless=False,
     )
     driver.get(url)
 
