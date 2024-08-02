@@ -41,7 +41,9 @@ def get_page(url: str) -> str | None:
 
     options = uc.ChromeOptions()
     driver = uc.Chrome(
-        options=options, user_data_dir=os.getcwd() + "/src/scraper/temp/chrome"
+        options=options,
+        user_data_dir=os.getcwd() + "/src/scraper/temp/chrome",
+        headless=True,
     )
     driver.get(url)
 
@@ -61,7 +63,7 @@ def get_page(url: str) -> str | None:
 
 if __name__ == "__main__":
 
-    url = "https://www.upwork.com/jobs/Expert_%7E0118f2d9c90341a983?source=rss"
+    url = "https://www.upwork.com/jobs/Generative-Expert-Needed_%7E01c5cf6fe1d5c72523?source=rss"
     page = get_page(url)
 
     with open(

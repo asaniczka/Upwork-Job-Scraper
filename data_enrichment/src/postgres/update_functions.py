@@ -37,7 +37,7 @@ def update_row(url: str, attributes: PostingAttributes):
     }
     headers = {
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
-        "Authorization": f"Bearer {os.getenv("SUPABASE_CLIENT_ANON_KEY")}",
+        "Authorization": f"Bearer {os.getenv('SUPABASE_CLIENT_ANON_KEY')}",
         "Content-Type": "application/json",
     }
 
@@ -55,7 +55,7 @@ def update_row_as_done(url: str):
     }
     headers = {
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
-        "Authorization": f"Bearer {os.getenv("SUPABASE_CLIENT_ANON_KEY")}",
+        "Authorization": f"Bearer {os.getenv('SUPABASE_CLIENT_ANON_KEY')}",
         "Content-Type": "application/json",
     }
 

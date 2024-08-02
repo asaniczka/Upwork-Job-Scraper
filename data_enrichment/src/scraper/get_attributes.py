@@ -50,7 +50,7 @@ def invoke_openai(model: ValidLLMModels | str, messages: LLMMessageLog) -> AIRes
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.getenv("AZ_OPENAI_API_KEY")}",
+        "Authorization": f"Bearer {os.getenv('AZ_OPENAI_API_KEY')}",
     }
 
     with httpx.Client() as client:

@@ -21,7 +21,7 @@ def get_pending_row() -> str | None:
 
     headers = {
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
-        "Authorization": f"Bearer {os.getenv("SUPABASE_CLIENT_ANON_KEY")}",
+        "Authorization": f"Bearer {os.getenv('SUPABASE_CLIENT_ANON_KEY')}",
         "Content-Type": "application/json",
     }
 
