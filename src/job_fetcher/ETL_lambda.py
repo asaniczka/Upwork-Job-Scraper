@@ -1,5 +1,7 @@
 """
-This module is responsible for collecting RSS XML feeds every 2 minutes, transforming the raw data, and loading them into the DB
+This module is responsible for fetching jobs from the upwork public job board
+It also saves them to a database
+This can be configured to run on a schedule
 """
 
 import os
