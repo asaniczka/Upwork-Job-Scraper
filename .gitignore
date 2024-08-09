@@ -1,10 +1,4 @@
 .env
 .venv
-Upwork_Jobs/*
-*/layer/*
-user_api/env/*
-user_api/__pycache__/*
-
-# TEMP
-user_api/*
+layer
 __pycache__
