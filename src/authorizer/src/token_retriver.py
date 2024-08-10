@@ -62,9 +62,6 @@ def publish_token(token: tuple[str, int]):
     url = os.getenv("POSTGREST_URL")
     anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
 
-    print(type(url))
-    print(type(anon_key))
-
     payload = {
         "token_name": "UniversalSearch",
         "token_value": token[0],

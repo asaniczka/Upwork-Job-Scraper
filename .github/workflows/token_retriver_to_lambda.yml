@@ -33,7 +33,7 @@ jobs:
       - name: Create archive of dependencies
         working-directory: src/authorizer
         run: |
-          cd ./venv/lib/python3.7/site-packages
+          cd ./venv/lib/python3.12/site-packages
           zip -r9 ../../../../api.zip .
 
       - name: Add API files to Zip file
