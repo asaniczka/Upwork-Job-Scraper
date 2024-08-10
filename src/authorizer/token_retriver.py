@@ -4,6 +4,7 @@ import os
 import httpx
 from dotenv import load_dotenv
 from rich import print
+import json
 
 load_dotenv()
 
@@ -54,6 +55,7 @@ def cookie_handler() -> tuple[str, int]:
 def publish_token(token: tuple[str, int]):
     """"""
 
+    print("Publishing token")
     url = os.getenv("POSTGREST_URL")
     anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
 
@@ -72,15 +74,31 @@ def publish_token(token: tuple[str, int]):
     response = httpx.post(url, json=payload, headers=headers)
 
 
-def executor():
-    """"""
+def validate_request(event: dict):
 
+    secret = os.getenv("SECRET")
+
+    if event["secret"] == secret:
+        return True
+    raise RuntimeError("Authentication failed")
+
+
+def lambda_handler(event: dict, context):
+    """
+    Entrypoint for lambda
+    """
+    validate_request(event)
     token = cookie_handler()
     if not token:
         raise ValueError("No token found")
+    print("Token retrived sucessfully")
 
     publish_token(token)
+    
+    print("All good. Returning token to invoker")
+    return json.dumps({"status_code": 200, "token": token[0]})
 
 
 if __name__ == "__main__":
-    executor()
+    data = lambda_handler({"secret": os.getenv("SECRET")}, {})
+    print(data)
