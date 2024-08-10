@@ -8,8 +8,8 @@ import os
 from datetime import datetime
 import asyncio
 import json
-from rich import print
 
+from rich import print
 from pydantic import (
     BaseModel,
     Field,
@@ -21,9 +21,9 @@ from pydantic import (
 )
 import httpx
 import ua_generator
+import dotenv
 
-# import dotenv
-# dotenv.load_dotenv()
+dotenv.load_dotenv()
 
 
 class OntologySkill(BaseModel):
@@ -103,6 +103,48 @@ class JobList(BaseModel):
             "data", "search", "universalSearchNuxt", "visitorJobSearchV1", "results"
         )
     )
+
+
+def get_auth_token(use_authorizer=False) -> str:
+
+    if use_authorizer:
+        res = httpx.post(
+            os.getenv("AUTHORIZER_URL"),
+            json={"secret": os.getenv("AUTH_SECRET")},
+            timeout=60,
+        )
+
+        print(res.status_code)
+        print(res.text)
+    else:
+        anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
+        base_url = os.getenv("POSTGREST_URL")
+
+        try:
+            url = base_url + "token_tracker"
+            headers = {
+                "apikey": anon_key,
+                "Authorization": f"Bearer {anon_key}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            }
+            params = {
+                "select": "token_value",
+                "token_name": "eq.UniversalSearch",
+                "order": "created_at.desc",
+                "limit": 1,
+            }
+
+            response = httpx.get(
+                url,
+                headers=headers,
+                params=params,
+                timeout=3,
+            )
+
+            return response.json()["token_value"]
+        except Exception as error:
+            print("Error fetching token from postgres", error)
 
 
 def collect_jobs() -> dict | None:
@@ -215,8 +257,18 @@ def lambda_handler(event, context):
     """
     handles the process of a single rss feed
     """
-
-    raw_feed = collect_jobs()
+    token = get_token()
+    retries = 0
+    while retries < 2:
+        try:
+            raw_feed = collect_jobs()
+        except Exception as e:
+            print(
+                "Error fetching jobs. Trying again with a new token",
+                type(e).__name__,
+                {e},
+            )
+            retries += 1
 
     if not raw_feed:
         return {"statusCode": 500, "body": json.dumps("Unable to extract from upwork")}
@@ -229,4 +281,5 @@ def lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-    lambda_handler(1, 1)
+    # lambda_handler(1, 1)
+    get_auth_token(use_authorizer=True)

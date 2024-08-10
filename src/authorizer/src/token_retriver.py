@@ -81,6 +81,8 @@ def validate_request(event: dict):
 
     secret = os.getenv("AUTH_SECRET")
 
+    print(event)
+
     if event["secret"] == secret:
         return True
     raise RuntimeError("Authentication failed")
