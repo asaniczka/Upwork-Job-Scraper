@@ -38,7 +38,7 @@ def extract_search_token(cookies: list[dict]) -> tuple[str, int]:
 
 def cookie_handler() -> tuple[str, int]:
     """"""
-
+    print("Fetching a token")
     retries = 0
     while retries < 3:
         try:
@@ -60,7 +60,7 @@ def publish_token(token: tuple[str, int]):
     anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
 
     payload = {
-        "token_name": "UniversalSearchNuxt_vt",
+        "token_name": "UniversalSearch",
         "token_value": token[0],
         "expires": token[1],
     }
@@ -94,7 +94,7 @@ def lambda_handler(event: dict, context):
     print("Token retrived sucessfully")
 
     publish_token(token)
-    
+
     print("All good. Returning token to invoker")
     return json.dumps({"status_code": 200, "token": token[0]})
 
