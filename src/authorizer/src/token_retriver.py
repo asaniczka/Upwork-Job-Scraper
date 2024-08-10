@@ -11,7 +11,7 @@ load_dotenv()
 
 def get_cookies() -> list[dict]:
     """"""
-
+    print("Calling Zyte")
     api_response = httpx.post(
         "https://api.zyte.com/v1/extract",
         auth=(os.getenv("ZYTE_KEY"), ""),
@@ -32,6 +32,7 @@ def get_cookies() -> list[dict]:
 def extract_search_token(cookies: list[dict]) -> tuple[str, int]:
     """"""
 
+    print("Extracting Auth Cookie")
     for i in cookies:
         if i["name"] == "UniversalSearchNuxt_vt":
             return i["value"], i["expires"]
