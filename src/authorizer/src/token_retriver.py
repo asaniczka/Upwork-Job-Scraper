@@ -77,15 +77,17 @@ def publish_token(token: tuple[str, int]):
     response = httpx.post(url, json=payload, headers=headers)
 
 
-def validate_request(event: dict):
+def validate_request(event: dict | str):
 
     if isinstance(event, str):
         event = json.loads(event)
 
+    print("Event type is", type(event).__name__)
+
     request_secret = event.get("secret") or event.get("body").get("secret")
     if request_secret == os.getenv("AUTH_SECRET"):
         return True
-    
+
     raise RuntimeError("Authentication failed")
 
 
