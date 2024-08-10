@@ -23,6 +23,11 @@ jobs:
 
       - name: Run Tests
         working-directory: src/authorizer
+        env:
+          ZYTE_KEY: ${{secrets.ZYTE_KEY}}
+          POSTGREST_URL: ${{secrets.POSTGREST_URL}}
+          SUPABASE_CLIENT_ANON_KEY: ${{secrets.SUPABASE_CLIENT_ANON_KEY}}
+          AUTH_SECRET: ${{secrets.AUTH_SECRET}}
         run: . venv/bin/activate && python3 -m unittest
 
       - name: Create archive of dependencies
