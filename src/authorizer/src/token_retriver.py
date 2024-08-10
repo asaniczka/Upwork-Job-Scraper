@@ -79,11 +79,13 @@ def publish_token(token: tuple[str, int]):
 
 def validate_request(event: dict):
 
-    secret = os.getenv("AUTH_SECRET")
+    if isinstance(event, str):
+        event = json.loads(event)
 
     request_secret = event.get("secret") or event.get("body").get("secret")
-    if request_secret == secret:
+    if request_secret == os.getenv("AUTH_SECRET"):
         return True
+    
     raise RuntimeError("Authentication failed")
 
 
@@ -104,5 +106,5 @@ def lambda_handler(event: dict, context):
 
 
 if __name__ == "__main__":
-    data = lambda_handler({"secret": os.getenv("SECRET")}, {})
+    data = lambda_handler({"secret": os.getenv("AUTH_SECRET")}, {})
     print(data)
