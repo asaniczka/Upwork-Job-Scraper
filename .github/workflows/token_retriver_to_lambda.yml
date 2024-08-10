@@ -3,7 +3,7 @@ on:
     branches:
       - main
 jobs:
-  token-retriver-to-lambda:
+  token-retriver-to-zip:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,14 +34,45 @@ jobs:
         working-directory: src/authorizer
         run: |
           cd ./venv/lib/python3.12/site-packages
-          zip -r9 ../../../../api.zip .
+          zip -r9 ../../../../token_retriver.zip .
 
-      - name: Add API files to Zip file
+      - name: Add SRC files to Zip file
         working-directory: src/authorizer
-        run: cd ./src && zip -g ../api.zip -r .
+        run: cd ./src && zip -g ../token_retriver.zip -r .
 
       - name: Upload zip file artifact
         uses: actions/upload-artifact@v2
         with:
-          name: api
-          path: src/authorizer/api.zip
+          name: token_retriver
+          path: src/authorizer/token_retriver.zip
+
+  token-retriver-to-aws:
+    runs-on: ubuntu-latest
+    needs: [token-retriver-to-zip]
+    steps:
+      - name: Install AWS CLI
+        uses: unfor19/install-aws-cli-action@v1
+        with:
+          version: 1
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      - name: Download token_retriver.zip
+        uses: actions/download-artifact@v2
+        with:
+          name: token_retriver
+
+      - name: Upload to s3
+        run: aws s3 cp token_retriver.zip s3://asaniczka-upwork-job-scraper-lambda/token_retriver.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Deploy new Lambda
+        run: aws lambda update-function-code --function-name upwork_token_retriever --s3-bucket asaniczka-upwork-job-scraper-lambda --s3-key
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_SECRET_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
