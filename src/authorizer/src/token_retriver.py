@@ -12,6 +12,7 @@ load_dotenv()
 def get_cookies() -> list[dict]:
     """"""
     print("Calling Zyte")
+    print(len(os.getenv("ZYTE_KEY")))
     api_response = httpx.post(
         "https://api.zyte.com/v1/extract",
         auth=(os.getenv("ZYTE_KEY"), ""),
