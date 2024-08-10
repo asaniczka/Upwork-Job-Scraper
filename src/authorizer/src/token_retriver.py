@@ -72,7 +72,7 @@ def publish_token(token: tuple[str, int]):
     }
     headers = {
         "apikey": anon_key,
-        "Authorization": f"Bearer {anon_key}",
+        "Authorization": "Bearer " + anon_key,
         "Content-Type": "application/json",
         "Prefer": "return=minimal",
     }
