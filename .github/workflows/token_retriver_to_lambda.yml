@@ -38,7 +38,7 @@ jobs:
 
       - name: Add API files to Zip file
         working-directory: src/authorizer
-        run: cd ./api && zip -g ../api.zip -r .
+        run: cd ./src && zip -g ../api.zip -r .
 
       - name: Upload zip file artifact
         uses: actions/upload-artifact@v2
