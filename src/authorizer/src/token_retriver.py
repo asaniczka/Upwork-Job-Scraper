@@ -25,6 +25,7 @@ def get_cookies() -> list[dict]:
 
     parsed_res = api_response.json()
     cookies: list[dict] = parsed_res["responseCookies"]
+    print(cookies)
     return cookies
 
 
@@ -43,7 +44,6 @@ def cookie_handler() -> tuple[str, int]:
     while retries < 3:
         try:
             cookies = get_cookies()
-            print(cookies)
             search_token, expires = extract_search_token(cookies)
             if not search_token:
                 raise ValueError("No token found. Might try again")
