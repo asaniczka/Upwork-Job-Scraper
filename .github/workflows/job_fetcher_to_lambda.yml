@@ -24,7 +24,6 @@ jobs:
       - name: Run Tests
         working-directory: src/job_fetcher
         env:
-          ZYTE_KEY: ${{secrets.ZYTE_KEY}}
           POSTGREST_URL: ${{secrets.POSTGREST_URL}}
           SUPABASE_CLIENT_ANON_KEY: ${{secrets.SUPABASE_CLIENT_ANON_KEY}}
           AUTHORIZER_URL: ${{secrets.AUTHORIZER_URL}}

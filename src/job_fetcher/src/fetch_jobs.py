@@ -9,7 +9,6 @@ from datetime import datetime
 import asyncio
 import json
 
-from rich import print
 from pydantic import (
     BaseModel,
     Field,
@@ -115,7 +114,8 @@ def get_auth_token(use_authorizer=False) -> str:
             json={"secret": os.getenv("AUTH_SECRET")},
             timeout=60,
         )
-
+        if res.status_code != 200:
+            raise ValueError("Unable to get token via authorizer")
         return res.json().get("token")
 
     print("Getting Auth token from postgres")
@@ -268,11 +268,10 @@ def lambda_handler(event, context):
             print(
                 "Error fetching jobs. Trying again with a new token",
                 type(e).__name__,
-                {e},
+                {str(e)[:500]},
             )
             retries += 1
-
-    if not jobs:
+    else:
         return {"statusCode": 500, "body": json.dumps("Unable to extract from upwork")}
 
     asyncio.run(handle_load(jobs))
