@@ -23,6 +23,8 @@ def get_cookies() -> list[dict]:
         timeout=60,
     )
 
+    if api_response.status_code != 200:
+        print("Failure on Zyte: ", api_response.status_code, api_response.text)
     parsed_res = api_response.json()
     cookies: list[dict] = parsed_res["responseCookies"]
     print(cookies)
