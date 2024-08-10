@@ -76,7 +76,7 @@ def publish_token(token: tuple[str, int]):
 
 def validate_request(event: dict):
 
-    secret = os.getenv("SECRET")
+    secret = os.getenv("AUTH_SECRET")
 
     if event["secret"] == secret:
         return True

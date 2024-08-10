@@ -19,7 +19,7 @@ class TestGetToken(TestCase):
 
     def test_get_token(self):
 
-        res = lambda_handler({"secret": os.getenv("SECRET")}, {})
+        res = lambda_handler({"secret": os.getenv("AUTH_SECRET")}, {})
 
         data = json.loads(res)
         self.assertEqual(data["status_code"], 200)
