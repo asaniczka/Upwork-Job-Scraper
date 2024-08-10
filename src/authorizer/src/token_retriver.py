@@ -84,7 +84,7 @@ def validate_request(event: dict | str):
 
     print("Event type is", type(event).__name__)
 
-    request_secret = event.get("secret") or event.get("body").get("secret")
+    request_secret = event.get("secret") or json.loads(event.get("body")).get("secret")
     if request_secret == os.getenv("AUTH_SECRET"):
         return True
 
