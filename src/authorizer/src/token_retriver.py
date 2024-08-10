@@ -12,7 +12,6 @@ load_dotenv()
 def get_cookies() -> list[dict]:
     """"""
     print("Calling Zyte")
-    print(len(os.getenv("ZYTE_KEY")))
     api_response = httpx.post(
         "https://api.zyte.com/v1/extract",
         auth=(os.getenv("ZYTE_KEY"), ""),
@@ -28,7 +27,6 @@ def get_cookies() -> list[dict]:
         print("Failure on Zyte: ", api_response.status_code, api_response.text)
     parsed_res = api_response.json()
     cookies: list[dict] = parsed_res["responseCookies"]
-    print(cookies)
     return cookies
 
 
@@ -63,6 +61,9 @@ def publish_token(token: tuple[str, int]):
     print("Publishing token")
     url = os.getenv("POSTGREST_URL")
     anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
+
+    print(type(url))
+    print(type(anon_key))
 
     payload = {
         "token_name": "UniversalSearch",
