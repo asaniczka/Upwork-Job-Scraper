@@ -260,7 +260,6 @@ def lambda_handler(event, context):
     while retries < 2:
         try:
             use_authorizor = retries > 0
-            use_authorizor = True
             auth_token = get_auth_token(use_authorizor)
             raw_feed = collect_jobs(auth_token)
             jobs = JobList(**raw_feed)
@@ -269,7 +268,7 @@ def lambda_handler(event, context):
             print(
                 "Error fetching jobs. Trying again with a new token",
                 type(e).__name__,
-                {str(e)[:500]},
+                {str(e)[:250]},
             )
             retries += 1
     else:
