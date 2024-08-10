@@ -136,12 +136,7 @@ def get_auth_token(use_authorizer=False) -> str:
             "limit": 1,
         }
 
-        response = httpx.get(
-            url,
-            headers=headers,
-            params=params,
-            timeout=3,
-        )
+        response = httpx.get(url, headers=headers, params=params, timeout=3)
 
         return response.json()[0]["token_value"]
     except Exception as error:
@@ -208,7 +203,7 @@ def collect_jobs(auth_token: str) -> dict | None:
         "Connection": "keep-alive",
     }
 
-    response = httpx.post(url, json=payload, headers=headers)
+    response = httpx.post(url, json=payload, headers=headers, proxy=os.getenv("PROXY"))
 
     if response.status_code != 200:
         print(response.text)
@@ -236,6 +231,7 @@ async def upload_to_db(job: Job, client: httpx.Client):
             data=job.model_dump_json(exclude="job_type"),
             timeout=3,
         )
+        print(response.status_code)
     except Exception as error:
         print("Error inserting to postgres", error)
 
@@ -279,4 +275,5 @@ def lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-    lambda_handler(1, 1)
+    data = lambda_handler(1, 1)
+    print(data)

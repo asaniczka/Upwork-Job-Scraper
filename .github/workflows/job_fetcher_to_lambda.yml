@@ -21,14 +21,15 @@ jobs:
         working-directory: src/job_fetcher
         run: python -m venv venv && source venv/bin/activate && pip install -r requirements.txt
 
-      # - name: Run Tests
-      #   working-directory: src/job_fetcher
-      #   env:
-      #     POSTGREST_URL: ${{secrets.POSTGREST_URL}}
-      #     SUPABASE_CLIENT_ANON_KEY: ${{secrets.SUPABASE_CLIENT_ANON_KEY}}
-      #     AUTHORIZER_URL: ${{secrets.AUTHORIZER_URL}}
-      #     AUTH_SECRET: ${{secrets.AUTH_SECRET}}
-      #   run: . venv/bin/activate && python3 -m unittest
+      - name: Run Tests
+        working-directory: src/job_fetcher
+        env:
+          POSTGREST_URL: ${{secrets.POSTGREST_URL}}
+          SUPABASE_CLIENT_ANON_KEY: ${{secrets.SUPABASE_CLIENT_ANON_KEY}}
+          AUTHORIZER_URL: ${{secrets.AUTHORIZER_URL}}
+          AUTH_SECRET: ${{secrets.AUTH_SECRET}}
+          PROXY: ${{secrets.PROXY}}
+        run: . venv/bin/activate && python3 -m unittest
 
       - name: Create archive of dependencies
         working-directory: src/job_fetcher
