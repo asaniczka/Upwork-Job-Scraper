@@ -43,12 +43,13 @@ def cookie_handler() -> tuple[str, int]:
     while retries < 3:
         try:
             cookies = get_cookies()
+            print(cookies)
             search_token, expires = extract_search_token(cookies)
             if not search_token:
                 raise ValueError("No token found. Might try again")
             return search_token, expires
         except Exception as e:
-            print(type(e).__name__, e)
+            print("Error fetching a token", type(e).__name__, e)
             retries += 1
 
 
