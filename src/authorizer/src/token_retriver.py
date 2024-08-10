@@ -59,8 +59,10 @@ def publish_token(token: tuple[str, int]):
     """"""
 
     print("Publishing token")
-    url = os.getenv("POSTGREST_URL")
+    base_url = os.getenv("POSTGREST_URL")
     anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
+
+    url = base_url + "token_tracker"
 
     payload = {
         "token_name": "UniversalSearch",
@@ -74,15 +76,15 @@ def publish_token(token: tuple[str, int]):
         "Prefer": "return=minimal",
     }
 
+    print(url)
     response = httpx.post(url, json=payload, headers=headers)
+    print(response.status_code)
 
 
 def validate_request(event: dict | str):
 
     if isinstance(event, str):
         event = json.loads(event)
-
-    print("Event type is", type(event).__name__)
 
     request_secret = event.get("secret") or json.loads(event.get("body")).get("secret")
     if request_secret == os.getenv("AUTH_SECRET"):

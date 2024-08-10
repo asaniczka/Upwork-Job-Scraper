@@ -106,48 +106,49 @@ class JobList(BaseModel):
 
 
 def get_auth_token(use_authorizer=False) -> str:
+    """"""
 
     if use_authorizer:
+        print("Using authorizer to get a token")
         res = httpx.post(
             os.getenv("AUTHORIZER_URL"),
             json={"secret": os.getenv("AUTH_SECRET")},
             timeout=60,
         )
 
-        print(res.status_code)
-        print(res.text)
-    else:
-        anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
-        base_url = os.getenv("POSTGREST_URL")
+        return res.json().get("token")
 
-        try:
-            url = base_url + "token_tracker"
-            headers = {
-                "apikey": anon_key,
-                "Authorization": f"Bearer {anon_key}",
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal",
-            }
-            params = {
-                "select": "token_value",
-                "token_name": "eq.UniversalSearch",
-                "order": "created_at.desc",
-                "limit": 1,
-            }
+    print("Getting Auth token from postgres")
+    anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
+    base_url = os.getenv("POSTGREST_URL")
+    try:
+        url = base_url + "token_tracker"
+        headers = {
+            "apikey": anon_key,
+            "Authorization": f"Bearer {anon_key}",
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal",
+        }
+        params = {
+            "select": "token_value",
+            "token_name": "eq.UniversalSearch",
+            "order": "created_at.desc",
+            "limit": 1,
+        }
 
-            response = httpx.get(
-                url,
-                headers=headers,
-                params=params,
-                timeout=3,
-            )
+        response = httpx.get(
+            url,
+            headers=headers,
+            params=params,
+            timeout=3,
+        )
 
-            return response.json()["token_value"]
-        except Exception as error:
-            print("Error fetching token from postgres", error)
+        return response.json()[0]["token_value"]
+    except Exception as error:
+        print("Error fetching token from postgres", error)
 
 
-def collect_jobs() -> dict | None:
+def collect_jobs(auth_token: str) -> dict | None:
     """"""
 
     url = "https://www.upwork.com/api/graphql/v1"
@@ -201,7 +202,7 @@ def collect_jobs() -> dict | None:
         "Referer": "https://www.upwork.com/nx/search/jobs/",
         "X-Upwork-Accept-Language": "en-US",
         "Content-Type": "application/json",
-        "Authorization": "Bearer x",  # TODO: get token
+        "Authorization": "Bearer " + auth_token,
         "Origin": "https://www.upwork.com",
         "DNT": "1",
         "Connection": "keep-alive",
@@ -218,10 +219,10 @@ def collect_jobs() -> dict | None:
 async def upload_to_db(job: Job, client: httpx.Client):
     """Uploads to db"""
 
-    anon_key = os.getenv("sb_anon_key")
-
+    anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
+    base_url = os.getenv("POSTGREST_URL")
     try:
-        url = "https://aklwouiknrlbwnqazyht.supabase.co/rest/v1/upwork_jobs_streaming"
+        url = base_url + "upwork_jobs_streaming"
         headers = {
             "apikey": anon_key,
             "Authorization": f"Bearer {anon_key}",
@@ -235,19 +236,17 @@ async def upload_to_db(job: Job, client: httpx.Client):
             data=job.model_dump_json(exclude="job_type"),
             timeout=3,
         )
-
-        print(response.status_code, response.text)
     except Exception as error:
-        print(error)
+        print("Error inserting to postgres", error)
 
 
-async def handle_load(jobs: list[Job]):
+async def handle_load(jobs: JobList):
     """handles uploading in parallel"""
 
     client = httpx.AsyncClient()
 
     tasks = []
-    for job in jobs:
+    for job in jobs.jobs:
         tasks.append(upload_to_db(job, client))
 
     await asyncio.gather(*tasks)
@@ -257,11 +256,14 @@ def lambda_handler(event, context):
     """
     handles the process of a single rss feed
     """
-    token = get_token()
     retries = 0
     while retries < 2:
         try:
-            raw_feed = collect_jobs()
+            use_authorizor = retries > 0
+            auth_token = get_auth_token(use_authorizor)
+            raw_feed = collect_jobs(auth_token)
+            jobs = JobList(**raw_feed)
+            break
         except Exception as e:
             print(
                 "Error fetching jobs. Trying again with a new token",
@@ -270,16 +272,12 @@ def lambda_handler(event, context):
             )
             retries += 1
 
-    if not raw_feed:
+    if not jobs:
         return {"statusCode": 500, "body": json.dumps("Unable to extract from upwork")}
 
-    jobs = JobList(**raw_feed)
-    print(jobs.model_dump())
-
-    # asyncio.run(handle_load(jobs))
-    # return {"statusCode": 200, "body": json.dumps("All Good")}
+    asyncio.run(handle_load(jobs))
+    return {"statusCode": 200, "body": json.dumps("All Good")}
 
 
 if __name__ == "__main__":
-    # lambda_handler(1, 1)
-    get_auth_token(use_authorizer=True)
+    lambda_handler(1, 1)
