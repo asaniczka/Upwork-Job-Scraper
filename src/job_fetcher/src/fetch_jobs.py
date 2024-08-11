@@ -273,6 +273,7 @@ def collect_jobs(auth_token: str, proxies: list[str]) -> dict | None:
                 raise RuntimeError("Invalid Proxy")
             if response.status_code != 200:
                 print(response.text)
+            break
         except (RuntimeError, httpx.ProxyError):
             print("Error on proxy. Retrying")
             retries += 1

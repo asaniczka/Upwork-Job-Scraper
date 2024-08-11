@@ -209,9 +209,21 @@ async def get_details(cipher: str, proxies: list[str]) -> UpworkClient:
         "x-requested-with": "XMLHttpRequest",
     }
 
-    response = await httpx.AsyncClient(headers=headers, proxy=get_proxy(proxies)).get(
-        url
-    )
+    retries = 0
+    while retries < 10:
+        try:
+            response = await httpx.AsyncClient(
+                headers=headers,
+                proxy=get_proxy(proxies),
+            ).get(url)
+
+            if response.status_code == 407:
+                raise RuntimeError("Invalid Proxy")
+            break
+
+        except (httpx.ProxyError, RuntimeError):
+            retries += 1
+            continue
     client = UpworkClient(**response.json())
 
     return client
