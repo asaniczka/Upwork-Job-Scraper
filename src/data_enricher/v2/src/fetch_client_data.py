@@ -10,6 +10,7 @@ from urllib.parse import quote
 import asyncio
 import json
 import random
+from functools import lru_cache
 
 import httpx
 from pydantic import (
@@ -163,26 +164,23 @@ def get_pending_rows() -> list[str] | None:
     return [x["link"] for x in rows]
 
 
-def get_proxy() -> str:
-    """
-    ### Description:
-        - Retrieves a random proxy from the environment
-          variable containing a list of proxies.
+def download_proxies() -> list[str]:
+    res = httpx.get(os.getenv("PROXY_URL"), timeout=5)
+    return res.text.split()
 
-    ### Returns:
-        - `str`
-            A randomly selected proxy from the list.
-    """
+
+def get_proxy(proxies: list[str]) -> str:
+    """"""
 
     print("Getting a new proxy")
 
-    proxies = os.getenv("PROXIES")
-    proxies = json.loads(proxies)
+    proxy = random.choice(proxies)
+    ip, port, user, password = proxy.split(":")
 
-    return random.choice(proxies)
+    return "http://" + user + ":" + password + "@" + ip + ":" + port
 
 
-async def get_details(cipher: str) -> UpworkClient:
+async def get_details(cipher: str, proxies: list[str]) -> UpworkClient:
     """
     ### Description:
         - Asynchronously fetches the details of a client
@@ -211,7 +209,9 @@ async def get_details(cipher: str) -> UpworkClient:
         "x-requested-with": "XMLHttpRequest",
     }
 
-    response = await httpx.AsyncClient(headers=headers, proxy=get_proxy()).get(url)
+    response = await httpx.AsyncClient(headers=headers, proxy=get_proxy(proxies)).get(
+        url
+    )
     client = UpworkClient(**response.json())
 
     return client
@@ -234,7 +234,7 @@ def link_to_cipher(link: str) -> str:
     return link.split("/")[-1]
 
 
-async def handle_row(url: str):
+async def handle_row(url: str, proxies: list[str]):
     """
     ### Description:
         - Handles the enrichment process for a single row of data,
@@ -247,7 +247,7 @@ async def handle_row(url: str):
     retries = 0
     while retries < 3:
         try:
-            details = await get_details(link_to_cipher(url))
+            details = await get_details(link_to_cipher(url), proxies)
             await update_row(url, details)
             break
         except ValidationError:
@@ -259,7 +259,7 @@ async def handle_row(url: str):
         raise RuntimeError("Unable to process row")
 
 
-async def async_handler(rows: list[str]):
+async def async_handler(rows: list[str], proxies: list[str]):
     """
     ### Description:
         - Manages the asynchronous handling of multiple rows of
@@ -272,7 +272,7 @@ async def async_handler(rows: list[str]):
 
     print(f"We have {len(rows)} to work on this round")
 
-    tasks = [asyncio.Task(handle_row(x)) for x in rows]
+    tasks = [asyncio.Task(handle_row(x, proxies)) for x in rows]
     done, pending = await asyncio.wait(tasks, return_when="ALL_COMPLETED")
 
     completed = 0
@@ -305,10 +305,11 @@ def lambda_handler(event, context):
             JSON string indicating the status of the operation.
     """
     rows = get_pending_rows()
+    proxies = download_proxies()
     if not rows:
         print("No rows available")
         return json.dumps({"status_code": 200, "status": "No rows available"})
-    asyncio.run(async_handler(rows))
+    asyncio.run(async_handler(rows, proxies))
 
     return json.dumps({"status_code": 200, "status": "Rows processed successfully"})
 
