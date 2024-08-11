@@ -100,7 +100,7 @@ class Job(BaseModel):
     @classmethod
     def _cypher2link(cls, value: str):
 
-        return "https://www.upwork.com/freelance-jobs/apply/" + value
+        return "https://www.upwork.com/jobs/" + value
 
 
 class JobList(BaseModel):

@@ -26,7 +26,7 @@ jobs:
         env:
           POSTGREST_URL: ${{secrets.POSTGREST_URL}}
           SUPABASE_CLIENT_ANON_KEY: ${{secrets.SUPABASE_CLIENT_ANON_KEY}}
-          PROXIES: ${{secrets.PROXIES}}
+          PROXY_URL: ${{secrets.PROXY_URL}}
         run: . venv/bin/activate && python3 -m unittest
 
       - name: Create archive of dependencies
