@@ -1,62 +1,63 @@
-# Upwork Job Scraper
+# Upwork Job Scraper Ecosystem
 
-Welcome to the Upwork Job Scraper! This is a microservice-based project designed to fetch job postings from Upwork, filter them, and enrich them with additional useful information.
+This repository consists of a comprehensive job scraping ecosystem designed to interact with the Upwork Job Board. The ecosystem incorporates various microservices for authentication, job fetching, and data enrichment. This setup ensures an efficient workflow with a focus on cost-effectiveness and modular design.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Architecture](#architecture)
-- [Modules](#modules)
-- [Job Fetcher](#job-fetcher)
-- [Data Enricher](#data-enricher)
+- [Microservices](#microservices)
+- [Authenticator Lambda](#authenticator-lambda)
+- [Job Fetcher Lambda](#job-fetcher-lambda)
+- [Data Enrichment Service](#data-enrichment-service)
+- [Architecture Diagram](#architecture-diagram)
+- [Cost Efficiency](#cost-efficiency)
 
 ## Overview
 
-The Upwork Job Scraper consists of two main modules: Job Fetcher and Data Enricher. The Job Fetcher is responsible for retrieving job postings from Upwork and storing them in a PostgreSQL database. The Data Enricher module enhances the filtered job data with additional contextual or relevant information, making it more valuable and actionable.
+The Upwork Job Scraper Ecosystem enables the collection, enrichment, and storage of job postings from the Upwork Job Board. Each microservice plays a distinct role in this workflow:
 
-## Architecture
+1. **Authenticator Lambda**: Retrieves and manages authentication tokens required for accessing the Zyte API.
+2. **Job Fetcher Lambda**: Fetches job postings from Upwork utilizing the token and stores them in a PostgreSQL database.
+3. **Data Enrichment Service**: Enriches retrieved job postings by adding additional information (client statistics) to enhance data quality for downstream usage.
 
-The architecture of the Upwork Job Scraper is designed to be modular and scalable.
+## Microservices
 
-- **Job Fetcher**: Runs on AWS Lambda and retrieves job postings from Upwork regularly.
-- **Data Enricher**: Executes on a private server using Selenium, fetching and combining data from various sources to enrich the job postings stored in PostgreSQL.
+### Authenticator Lambda
 
-```
-                   +-------------------+
-                   |  Upwork Platform  |
-                   +-------------------+
-                             |
-                             v
-                   +-------------------+
-                   |    Job Fetcher    | <--- AWS Lambda
-                   +-------------------+
-                             |
-                             v
-                   +-------------------+
-                   |   PostgreSQL DB   |
-                   +-------------------+
-                             |
-                             |
-                             v
-                   +-------------------+
-                   |   Data Enricher   | <--- Private Server (Selenium)
-                   +-------------------+
-                             |
-                             v
-                   +-------------------+
-                   | Enriched Job Data  |
-                   +-------------------+
-```
+**Responsibilities:**
 
-## Modules
+- Retrieves an authentication token from the Zyte API.
+- Caches the token in the PostgreSQL database via PostgREST.
+- Validates requests to ensure secure access to job-fetching processes.
 
-### Job Fetcher
+### Job Fetcher Lambda
 
-- **Functionality**: This module is responsible for fetching all jobs posted to Upwork.
-- **Storage**: The raw job data is stored in a PostgreSQL database.
-- **Filtering**: Filters the raw job data according to defined criteria and saves the filtered jobs to a separate table.
+**Responsibilities:**
 
-### Data Enricher
+- Scheduled to extract **ALL** job postings from the Upwork Job Board.
+- Updates the PostgreSQL database with job postings, handling an average of around **6,000 job postings per day**.
+- Utilizes the cached authentication token from the Authenticator Lambda; if the token is expired, it fetches a new one.
 
-- **Functionality**: This module pulls the filtered jobs from the PostgreSQL database and enriches them with additional data.
-- **Tech Stack**: Utilizes Selenium for data fetching and manipulation.
+### Data Enrichment Service
+
+**Responsibilities:**
+
+- Enriches job postings with client data, enhancing the overall quality of the data available.
+- Provides two versions of enrichment:
+- **Version 1**: Operates locally and requires a logged-in Upwork account. This version is more expensive but ensures 100% data enrichment.
+- **Version 2**: A serverless implementation using AWS Lambda, offering a cost-effective method for data enrichment.
+- In cases where Version 2 fails to enrich data, Version 1 steps in to guarantee completion.
+
+## Architecture Diagram
+
+![](resources/architecture.png)
+
+## Cost Efficiency
+
+The ecosystem is designed with cost efficiency in mind:
+
+- The Authenticator Lambda caches tokens in PostgreSQL to minimize repeated fetches from the Zyte API.
+- The Job Fetcher Lambda operates on a scheduled basis, reducing the frequency of API calls to the Upwork Job Board.
+- The Data Enrichment Service augments job postings without requiring constant fetching from the Upwork API, allowing for enhanced data quality while managing costs effectively.
+
+With a well-structured architecture, the Upwork Job Scraper Ecosystem ensures efficient management of job postings, provides enriched data for analysis, and securely handles authentication throughout the process.

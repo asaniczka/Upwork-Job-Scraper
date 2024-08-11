@@ -1,39 +1,93 @@
-# Data Enricher Module
-
-Welcome to the Data Enricher module of the Upwork Job Scraper! This module is responsible for enriching the fetched job postings with additional contextual data and client information from Upwork. It processes the job descriptions, extracts relevant attributes, and updates the corresponding database entries.
+# Data Enricher
 
 ## Overview
 
-The Data Enricher collects job postings that have already been filtered and adds value by retrieving additional information using web scraping techniques and integrating responses from OpenAI's models. The enriched data enhances the insight and usability of the listings, making it easier for users to analyze job opportunities.
+This package is designed to enrich job postings from Upwork by augmenting job data with additional client information. It provides two versions of the data enrichment process, each with its own methods, advantages, and drawbacks.
 
-## Key Features
+- **Version 1** relies on a local deployment that requires a logged-in Upwork account to fetch client data, supplemented by OpenAI for extracting attributes.
+- **Version 2** utilizes AWS Lambda, allowing for a serverless architecture that is more scalable and cost-effective, while being designed to run on a schedule or on-demand.
 
-- Fetches job postings using Selenium to simulate user browsing and preserve session data with cookies.
-- Uses OpenAI API to extract detailed job attributes from the job description, aligning it with a predefined schema.
-- Updates the PostgreSQL database with additional enrichment data, including client attributes.
-- Implements error handling and retry logic to ensure robust data extraction.
+<!-- -->
 
-## Architecture
+## Responsibilities
 
-The Data Enricher functions in a modular fashion to facilitate the enrichment process:
+The primary responsibilities of the data enrichment system include:
 
-```lua
-+-------------------+
-|   Data Enricher   |
-+-------------------+
-          |
-          v
-+-------------------+
-|  Job Attributes   | <--- Web Scraping (Selenium)
-+-------------------+
-          |
-          v
-+-------------------+
-|  OpenAI API       | <--- Data Enhancement
-+-------------------+
-          |
-          v
-+-------------------+
-|   PostgreSQL DB   | <--- Updated Data
-+-------------------+
+1. **Data Fetching**: Collect job postings from the Upwork API.
+2. **Data Augmentation**: Enrich the job postings with client statistics and attributes.
+3. **Database Storage**: Save the enriched data into a PostgreSQL database for further use or analysis.
+4. **Handling Cloudflare**: The local deployment in Version 1 must bypass Cloudflare's Turnstile, which adds complexity.
+
+<!-- -->
+
+## Pros and Cons
+
+| Feature                 | Version 1                                    | Version 2                                    |
+| ----------------------- | -------------------------------------------- | -------------------------------------------- |
+| **Deployment Method**   | Local (requires Upwork account)              | Cloud (AWS Lambda)                           |
+| **Reliability**         | 100% reliable                                | Approx. 75% reliability due to accessibility |
+| **Cost**                | Higher due to OpenAI usage                   | Lower due to serverless architecture         |
+| **Scalability**         | Limited (depends on local resources)         | Highly scalable (can run multiple instances) |
+| **Cloudflare Handling** | Requires bypassing Cloudflare Turnstile      | No need for bypassing                        |
+| **Setup Complexity**    | More cumbersome (local setup, cookies, etc.) | Easier setup with lambda                     |
+
+## Architecture Diagrams
+
+### Version 1 Architecture Diagram (Local Deployment)
+
+```plaintext
++-----------------------+
+|   Local Machine       |
+|  (Logged-in Session)  |
++-----------+-----------+
+            |
+            v
++-----------------------+
+|     Selenium/Web      |
+|       Scraping        |
+|      (Bypassing       |
+|      Cloudflare)      |
++-----------+-----------+
+            |
+            v
++-----------------------+
+|        OpenAI         |
+|     (Extracting       |
+|      Attributes)      |
++-----------+-----------+
+            |
+            v
++-----------------------+
+|      PostgreSQL       |
+|     (Job Storage)     |
++-----------------------+
 ```
+
+### Version 2 Architecture Diagram (Cloud Deployment)
+
+```plaintext
++-----------------------+
+|   Client Application   |
++-----------+-----------+
+            |
+            v
++-----------------------+
+|     AWS Lambda        |
+|   Data Enrichment     |
+|(Scheduled & On-Demand)|
++-----------+-----------+
+            |
+            v
++-----------------------+
+|      Upwork API       |
++-----------------------+
+            |
+            v
++-----------------------+
+|       PostgREST       |
+|  (Enriched Job Data)  |
+|   + PostgreSQL DB     |
++-----------------------+
+```
+
+This package provides a flexible and robust solution for enriching job data, allowing for the choice of deployment based on specific needs and circumstances. Whether for reliable local processing or a scalable cloud-based approach, both versions offer valuable capabilities to enhance Upwork job postings with additional client insights.

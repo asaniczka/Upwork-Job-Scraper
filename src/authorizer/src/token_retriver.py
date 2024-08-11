@@ -76,7 +76,6 @@ def publish_token(token: tuple[str, int]):
         "Prefer": "return=minimal",
     }
 
-    print(url)
     response = httpx.post(url, json=payload, headers=headers)
     print(response.status_code)
 
