@@ -37,7 +37,7 @@ jobs:
 
       - name: Add SRC files to Zip file
         working-directory: src/data_enricher/
-        run: cd ./v2/src && zip -g ../upwork_data_enricher.zip -r .
+        run: cd ./v2/src && zip -u ../../upwork_data_enricher.zip -r .
 
       - name: Upload zip file artifact
         uses: actions/upload-artifact@v4
