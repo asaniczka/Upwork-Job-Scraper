@@ -6,11 +6,9 @@
 
 from datetime import datetime
 import os
-from urllib.parse import quote
 import asyncio
 import json
 import random
-from functools import lru_cache
 
 import httpx
 from pydantic import (
