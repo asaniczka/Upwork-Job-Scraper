@@ -146,7 +146,7 @@ def get_pending_rows() -> list[str] | None:
 
     url = os.getenv("POSTGREST_URL") + "upwork_filtered_jobs"
 
-    querystring = {"did_augment_client_data": "eq.false", "select": "link", "limit": 50}
+    querystring = {"did_augment_client_data": "eq.false", "select": "link", "limit": 10}
 
     headers = {
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
@@ -211,8 +211,7 @@ async def get_details(cipher: str, proxies: list[str]) -> UpworkClient:
     while retries < 10:
         try:
             response = await httpx.AsyncClient(
-                headers=headers,
-                proxy=get_proxy(proxies),
+                headers=headers, proxy=get_proxy(proxies), timeout=5
             ).get(url)
 
             if response.status_code == 407:
