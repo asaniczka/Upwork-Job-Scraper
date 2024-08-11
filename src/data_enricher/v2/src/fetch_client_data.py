@@ -1,4 +1,8 @@
-"""Module for augmenting client data"""
+"""
+### Description:
+- This module is responsible for augmenting client data related to job postings on Upwork.
+- It fetches client details and updates database records.
+"""
 
 from datetime import datetime
 import os
@@ -25,6 +29,12 @@ load_dotenv()
 
 
 class UpworkClient(BaseModel):
+    """
+    ### Description:
+    - Represents an Upwork client with various statistics
+      related to their hiring and spending on freelancers.
+    """
+
     client_country: str | None = Field(
         validation_alias=AliasPath("buyer", "location", "country")
     )
@@ -77,7 +87,19 @@ class UpworkClient(BaseModel):
 
 
 async def update_row(upwork_link: str, client: UpworkClient):
-    """"""
+    """
+    ### Description:
+        - Asynchronously updates the client data in the database
+          for a specific Upwork link.
+        - Sends a PATCH request to the server with updated data.
+
+    ### Args:
+        - `upwork_link`: str
+            The Upwork job link that needs to be updated.
+        - `client`: UpworkClient
+            The UpworkClient instance containing updated client data.
+
+    """
 
     print(f"Updating row {upwork_link}")
 
@@ -113,7 +135,15 @@ async def update_row(upwork_link: str, client: UpworkClient):
 
 
 def get_pending_rows() -> list[str] | None:
-    """"""
+    """
+    ### Description:
+        - Fetches a list of pending rows for client data augmentation
+          from the database.
+
+    ### Returns:
+        - `list[str] | None`
+            A list of Upwork links to augment, or None if none are found.
+    """
 
     url = os.getenv("POSTGREST_URL") + "upwork_filtered_jobs"
 
@@ -134,6 +164,16 @@ def get_pending_rows() -> list[str] | None:
 
 
 def get_proxy() -> str:
+    """
+    ### Description:
+        - Retrieves a random proxy from the environment
+          variable containing a list of proxies.
+
+    ### Returns:
+        - `str`
+            A randomly selected proxy from the list.
+    """
+
     print("Getting a new proxy")
 
     proxies = os.getenv("PROXIES")
@@ -143,7 +183,24 @@ def get_proxy() -> str:
 
 
 async def get_details(cipher: str) -> UpworkClient:
-    """"""
+    """
+    ### Description:
+        - Asynchronously fetches the details of a client
+          from Upwork using their job cipher.
+
+    ### Args:
+        - `cipher`: str
+            The cipher code for the Upwork job.
+
+    ### Returns:
+        - `UpworkClient`
+            An instance containing the client's data.
+
+    ### Raises:
+        - `httpx.HTTPStatusError`:
+            If the request fails due to an HTTP error.
+    """
+
     url = f"https://www.upwork.com/job-details/jobdetails/visitor/{cipher}/details"
 
     headers = {
@@ -161,12 +218,32 @@ async def get_details(cipher: str) -> UpworkClient:
 
 
 def link_to_cipher(link: str) -> str:
-    """"""
+    """
+    ### Description:
+        - Converts a given Upwork job link into its corresponding
+          job cipher for further processing.
+
+    ### Args:
+        - `link`: str
+            The Upwork job link to convert.
+
+    ### Returns:
+        - `str`
+            The cipher code extracted from the job link.
+    """
     return link.split("/")[-1]
 
 
 async def handle_row(url: str):
+    """
+    ### Description:
+        - Handles the enrichment process for a single row of data,
+        including retries in case of failures.
 
+    ### Args:
+        - `url`: str
+            The Upwork job link to process.
+    """
     retries = 0
     while retries < 3:
         try:
@@ -183,6 +260,15 @@ async def handle_row(url: str):
 
 
 async def async_handler(rows: list[str]):
+    """
+    ### Description:
+        - Manages the asynchronous handling of multiple rows of
+        client data augmentation.
+
+    ### Args:
+        - `rows`: list[str]
+            A list of Upwork job links to process.
+    """
 
     print(f"We have {len(rows)} to work on this round")
 
@@ -203,7 +289,21 @@ async def async_handler(rows: list[str]):
 
 
 def lambda_handler(event, context):
+    """
+    ### Description:
+        - Main handler function for AWS Lambda which retrieves
+        pending rows and triggers the async processing.
 
+    ### Args:
+        - `event`: any
+            Event data provided by AWS Lambda.
+        - `context`: any
+            Context providing runtime information.
+
+    ### Returns:
+        - `str`
+            JSON string indicating the status of the operation.
+    """
     rows = get_pending_rows()
     if not rows:
         print("No rows available")

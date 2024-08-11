@@ -16,7 +16,7 @@ This repository consists of a comprehensive job scraping ecosystem designed to i
 
 The Upwork Job Scraper Ecosystem enables the collection, enrichment, and storage of job postings from the Upwork Job Board. Each microservice plays a distinct role in this workflow:
 
-1. **Authenticator Lambda**: Retrieves and manages authentication tokens required for accessing the Zyte API.
+1. **Authenticator Lambda**: Retrieves and manages authentication tokens required for accessing the Upwork API.
 2. **Job Fetcher Lambda**: Fetches job postings from Upwork utilizing the token and stores them in a PostgreSQL database.
 3. **Data Enrichment Service**: Enriches retrieved job postings by adding additional information (client statistics) to enhance data quality for downstream usage.
 
@@ -26,7 +26,7 @@ The Upwork Job Scraper Ecosystem enables the collection, enrichment, and storage
 
 **Responsibilities:**
 
-- Retrieves an authentication token from the Zyte API.
+- Retrieves an authentication token from the Upwork API.
 - Caches the token in the PostgreSQL database via PostgREST.
 - Validates requests to ensure secure access to job-fetching processes.
 
@@ -56,7 +56,7 @@ The Upwork Job Scraper Ecosystem enables the collection, enrichment, and storage
 
 The ecosystem is designed with cost efficiency in mind:
 
-- The Authenticator Lambda caches tokens in PostgreSQL to minimize repeated fetches from the Zyte API.
+- The Authenticator Lambda caches tokens in PostgreSQL to minimize repeated fetches from the Zyte.
 - The Job Fetcher Lambda operates on a scheduled basis, reducing the frequency of API calls to the Upwork Job Board.
 - The Data Enrichment Service augments job postings without requiring constant fetching from the Upwork API, allowing for enhanced data quality while managing costs effectively.
 

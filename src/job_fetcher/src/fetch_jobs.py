@@ -1,7 +1,8 @@
 """
-This module is responsible for fetching jobs from the upwork public job board
-It also saves them to a database
-This can be configured to run on a schedule
+- This module is responsible for fetching jobs from the Upwork public job board 
+  and saving them to a database.
+- It can be configured to run on a schedule.
+
 """
 
 import os
@@ -26,13 +27,21 @@ dotenv.load_dotenv()
 
 
 class OntologySkill(BaseModel):
-    """Holds and individual skill"""
+    """
+    ### Description:
+    - Represents an individual skill with a preferred label.
+    - Holds the structure for skill data used in job postings.
+    """
 
     prefLabel: str
 
 
 class Job(BaseModel):
-    """Holds data for an individual job"""
+    """
+    ### Description:
+    - Represents the structure for an individual job posting.
+    - Holds various attributes related to job details.
+    """
 
     title: str | None = Field(validation_alias=AliasPath("title"))
     link: str = Field(validation_alias=AliasPath("jobTile", "job", "ciphertext"))
@@ -95,7 +104,12 @@ class Job(BaseModel):
 
 
 class JobList(BaseModel):
-    """Holds a list of job posts"""
+    """
+    ### Description:
+    - Represents a list of job postings returned from
+      the job API.
+    - Contains a list of Job objects.
+    """
 
     jobs: list[Job] = Field(
         validation_alias=AliasPath(
@@ -105,7 +119,23 @@ class JobList(BaseModel):
 
 
 def get_auth_token(use_authorizer=False) -> str:
-    """"""
+    """
+    ### Description:
+        - Retrieves an authorization token to access the job API.
+        - Can optionally use an authorizer server for token fetching.
+
+    ### Args:
+        - `use_authorizer`: bool
+            Indicates whether to use the authorizer service.
+
+    ### Returns:
+        - `str`
+            The retrieved authorization token.
+
+    ### Raises:
+        - `ValueError`:
+            If unable to retrieve the token.
+    """
 
     if use_authorizer:
         print("Using authorizer to get a token")
@@ -144,7 +174,19 @@ def get_auth_token(use_authorizer=False) -> str:
 
 
 def collect_jobs(auth_token: str) -> dict | None:
-    """"""
+    """
+    ### Description:
+        - Collects job postings from the Upwork API using the provided authorization token.
+        - Makes a GraphQL request to fetch job details.
+
+    ### Args:
+        - `auth_token`: str
+            The authorization token to include in the API request.
+
+    ### Returns:
+        - `dict | None`
+            A dictionary containing job postings or None if unsuccessful.
+    """
 
     url = "https://www.upwork.com/api/graphql/v1"
 
@@ -212,7 +254,17 @@ def collect_jobs(auth_token: str) -> dict | None:
 
 
 async def upload_to_db(job: Job, client: httpx.Client):
-    """Uploads to db"""
+    """
+    ### Description:
+        - Asynchronously uploads a single Job instance to the database.
+        - Handles exceptions while inserting jobs into the database.
+
+    ### Args:
+        - `job`: Job
+            The Job instance to upload.
+        - `client`: httpx.Client
+            The HTTP client for making requests.
+    """
 
     anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
     base_url = os.getenv("POSTGREST_URL")
@@ -237,7 +289,15 @@ async def upload_to_db(job: Job, client: httpx.Client):
 
 
 async def handle_load(jobs: JobList):
-    """handles uploading in parallel"""
+    """
+    ### Description:
+        - Handles the parallel uploading of multiple job postings to the database.
+        - Uses asyncio to manage concurrent uploads.
+
+    ### Args:
+        - `jobs`: JobList
+            The JobList instance containing multiple Job objects.
+    """
 
     client = httpx.AsyncClient()
 
@@ -250,7 +310,23 @@ async def handle_load(jobs: JobList):
 
 def lambda_handler(event, context):
     """
-    handles the process of a single rss feed
+    ### Description:
+        - Main handler function for the lambda execution.
+        - Fetches jobs with retries, collects them, and uploads to the database.
+
+    ### Args:
+        - `event`: any
+            The event data passed to the lambda function.
+        - `context`: any
+            The context providing runtime information.
+
+    ### Returns:
+        - `dict`
+            Status code and message indicating success or failure.
+
+    ### Raises:
+        - `ValueError`:
+            If no jobs could be fetched after retries.
     """
     retries = 0
     while retries < 2:

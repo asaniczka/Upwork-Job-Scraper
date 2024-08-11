@@ -1,3 +1,11 @@
+"""
+### Description:
+    - This module handles the retrieval and storage of cookies 
+      to maintain a login session when scraping web pages.
+    - It uses Selenium to load web pages and BeautifulSoup to 
+      parse the content.
+"""
+
 import os
 from datetime import datetime
 import re
@@ -20,21 +28,51 @@ load_dotenv()
 
 
 def get_cookies():
-    """Gets saved cookie to restore the login session"""
+    """
+    ### Description:
+        - Retrieves saved cookies from a JSON file to restore
+          a previous login session.
+
+    ### Returns:
+        - `list[dict]`
+            A list of dictionaries representing the cookies.
+    """
+
     with open("src/scraper/temp/cookies.json", "r", encoding="utf-8") as rf:
         cookies = json.load(rf)
         return cookies
 
 
 def save_cookies(cookies: list[dict]):
-    """Saves cookies for later"""
+    """
+    ### Description:
+        - Saves the provided cookies to a JSON file for later
+          use in restoring the session.
+
+    ### Args:
+        - `cookies`: list[dict]
+            A list of dictionaries containing cookie data.
+
+    """
     with open("src/scraper/temp/cookies.json", "w", encoding="utf-8") as wf:
         json.dump(cookies, wf)
 
 
 def get_page(url: str) -> str | None:
     """
-    Loads the page using selenium
+    ### Description:
+        - Loads a webpage using Selenium and returns the text
+          content of the page.
+        - Automatically refreshes the page with saved cookies.
+
+    ### Args:
+        - `url`: str
+            The URL of the page to load.
+
+    ### Returns:
+        - `str | None`
+            The text content of the page, or None if the page
+            could not be loaded.
     """
 
     print(f"Getting page {url}")

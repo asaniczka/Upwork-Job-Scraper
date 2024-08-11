@@ -1,4 +1,6 @@
-"""Responsible for loading a job page and extracting metadata"""
+"""
+Module to connect with Zyte
+"""
 
 from base64 import b64decode
 import os
@@ -12,7 +14,26 @@ def zyte_worker(
     max_retries=5,
     country: str = "US",
 ) -> str | None:
-    """"""
+    """
+    ### Description:
+        - Makes a request to the Zyte API to retrieve HTML content
+          of a specified URL, with support for JavaScript rendering.
+        - Retries the request in case of failure, up to a specified maximum.
+
+    ### Args:
+        - `url`: str
+            The URL of the page to fetch.
+        - `render_html`: bool, optional
+            Indicates whether to request the rendered HTML; defaults to True.
+        - `max_retries`: int, optional
+            The maximum number of retries on failure; defaults to 5.
+        - `country`: str, optional
+            The country for geographical request; defaults to "US".
+
+    ### Returns:
+        - `str | None`
+            The rendered HTML content of the page, or None if unsuccessful.
+    """
     retries = 0
     while retries < max_retries:
         try:

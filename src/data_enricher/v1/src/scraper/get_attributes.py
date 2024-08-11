@@ -1,5 +1,7 @@
 """
-This module constains the worker responsible for gather client data.
+### Description:
+    - This module contains the worker responsible for 
+      gathering client data from Upwork job postings.
 """
 
 # pylint:disable=wrong-import-position
@@ -36,7 +38,26 @@ from src.models.genai_models import (
 
 
 def invoke_openai(model: ValidLLMModels | str, messages: LLMMessageLog) -> AIResponse:
-    """"""
+    """
+    ### Description:
+        - Invokes the OpenAI API to generate a chat completion
+          based on provided messages and model.
+
+    ### Args:
+        - `model`: ValidLLMModels | str
+            The model to be used for the API call.
+        - `messages`: LLMMessageLog
+            The logged messages to be sent in the request.
+
+    ### Returns:
+        - `AIResponse`
+            The response from the OpenAI API containing the
+            generated output.
+
+    ### Raises:
+        - `RuntimeError`:
+            If there is an error during the API call or response parsing.
+    """
 
     if not isinstance(model, str):
         model = model.value
@@ -72,7 +93,21 @@ def invoke_openai(model: ValidLLMModels | str, messages: LLMMessageLog) -> AIRes
 def handler_generate_response(
     messages: LLMMessageLog, model: ValidLLMModels
 ) -> AIResponse:
-    """"""
+    """
+    ### Description:
+        - Generates a response from the OpenAI model based
+          on the provided messages.
+
+    ### Args:
+        - `messages`: LLMMessageLog
+            The logged messages to generate a response for.
+        - `model`: ValidLLMModels
+            The model to be used for the generation.
+
+    ### Returns:
+        - `AIResponse`
+            The generated response from the OpenAI model.
+    """
 
     response = invoke_openai(model, messages)
     response.calculate_cost(model.value, LLM_COST_PER_TOKEN)
@@ -81,7 +116,23 @@ def handler_generate_response(
 
 
 def convert_response_to_schema(res: str) -> PostingAttributes:
-    """"""
+    """
+    ### Description:
+        - Converts a string response from the OpenAI API into
+          a structured PostingAttributes object.
+
+    ### Args:
+        - `res`: str
+            The JSON response string from the OpenAI API.
+
+    ### Returns:
+        - `PostingAttributes`
+            A structured object containing job posting attributes.
+
+    ### Raises:
+        - `ValidationError`:
+            If the response does not conform to the PostingAttributes schema.
+    """
 
     data = chompjs.parse_js_object(res)
     schemed_product = PostingAttributes(**data)
@@ -89,7 +140,20 @@ def convert_response_to_schema(res: str) -> PostingAttributes:
 
 
 def entry_extract_attributes(page: str) -> tuple[AIResponse, PostingAttributes]:
-    """"""
+    """
+    ### Description:
+        - Extracts job posting attributes from a webpage using
+          the OpenAI API to parse the content.
+
+    ### Args:
+        - `page`: str
+            The content of the webpage to extract attributes from.
+
+    ### Returns:
+        - `tuple[AIResponse, PostingAttributes]`
+            A tuple containing the generated AI response and the
+            parsed posting attributes.
+    """
 
     print("Extracting attributes from a page")
 
@@ -118,7 +182,9 @@ def entry_extract_attributes(page: str) -> tuple[AIResponse, PostingAttributes]:
     retries = 0
     while retries < 5:
         try:
-            response = handler_generate_response(messages, ValidLLMModels.OPENAI_GPT4o_MINI)
+            response = handler_generate_response(
+                messages, ValidLLMModels.OPENAI_GPT4o_MINI
+            )
             # add current cost to checkpoint incase validation fails
             if response:
                 running_cost += response.cost

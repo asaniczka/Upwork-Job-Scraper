@@ -10,7 +10,19 @@ load_dotenv()
 
 
 def get_cookies() -> list[dict]:
-    """"""
+    """
+    ### Description:
+        - Retrieves cookies from a specific API endpoint.
+        - Calls the Zyte API to extract response cookies from the given URL.
+
+    ### Returns:
+        - `cookies`: list[dict]
+            A list of dictionaries containing the cookies from the API response.
+
+    ### Raises:
+        - `httpx.HTTPStatusError`:
+            If the API response indicates an error status code.
+    """
     print("Calling Zyte")
     api_response = httpx.post(
         "https://api.zyte.com/v1/extract",
@@ -31,7 +43,21 @@ def get_cookies() -> list[dict]:
 
 
 def extract_search_token(cookies: list[dict]) -> tuple[str, int]:
-    """"""
+    """
+    ### Description:
+        - Extracts the search token and its expiration from the cookies list.
+        - Searches for a specific cookie name and returns its value and expiry time.
+
+    ### Args:
+        - `cookies`: list[dict]
+            A list of cookie dictionaries to search for the token.
+
+    ### Returns:
+        - `search_token`: str
+            The value of the search token.
+        - `expires`: int
+            The expiration time of the token.
+    """
 
     print("Extracting Auth Cookie")
     for i in cookies:
@@ -40,7 +66,22 @@ def extract_search_token(cookies: list[dict]) -> tuple[str, int]:
 
 
 def cookie_handler() -> tuple[str, int]:
-    """"""
+    """
+    ### Description:
+        - Fetches an authentication token with retry logic.
+        - Calls the get_cookies and extract_search_token functions.
+
+    ### Returns:
+        - `search_token`: str
+            The retrieved search token.
+        - `expires`: int
+            The expiration time of the token.
+
+    ### Raises:
+        - `ValueError`:
+            If no token is found after retries.
+    """
+
     print("Fetching a token")
     retries = 0
     while retries < 3:
@@ -56,7 +97,16 @@ def cookie_handler() -> tuple[str, int]:
 
 
 def publish_token(token: tuple[str, int]):
-    """"""
+    """
+    ### Description:
+        - Publishes the retrieved token to a specified URL.
+        - Sends a POST request with the token details to an API endpoint.
+
+    ### Args:
+        - `token`: tuple[str, int]
+            A tuple containing the token value and its expiration time.
+
+    """
 
     print("Publishing token")
     base_url = os.getenv("POSTGREST_URL")
@@ -81,6 +131,23 @@ def publish_token(token: tuple[str, int]):
 
 
 def validate_request(event: dict | str):
+    """
+    ### Description:
+        - Validates the incoming request using a secret.
+        - Handles both string and dictionary events to check the authentication secret.
+
+    ### Args:
+        - `event`: dict | str
+            The event data containing a secret to validate.
+
+    ### Returns:
+        - `bool`
+            Returns True if the validation is successful.
+
+    ### Raises:
+        - `RuntimeError`:
+            If authentication fails due to mismatched secrets.
+    """
 
     if isinstance(event, str):
         event = json.loads(event)
@@ -94,7 +161,23 @@ def validate_request(event: dict | str):
 
 def lambda_handler(event: dict, context):
     """
-    Entrypoint for lambda
+    ### Description:
+        - Entry point for AWS Lambda function.
+        - Validates the request and retrieves, then publishes the token.
+
+    ### Args:
+        - `event`: dict
+            The event data containing the authentication secret.
+        - `context`: any
+            The context provided by AWS Lambda (not used here).
+
+    ### Returns:
+        - `str`
+            A JSON string containing status code and the token.
+
+    ### Raises:
+        - `ValueError`:
+            If no token is found after processing.
     """
     validate_request(event)
     token = cookie_handler()

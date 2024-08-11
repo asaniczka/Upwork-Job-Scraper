@@ -20,7 +20,15 @@ from src.scraper.get_attributes import entry_extract_attributes
 
 
 def executor():
-    """"""
+    """
+    ### Description:
+        - Continuously fetches pending rows from the database
+          and processes each row to extract attributes for updates.
+        - Calls functions to retrieve the web page, extract attributes,
+          and update the database.
+        - Marks the row as done in case of errors during attribute
+          extraction.
+    """
 
     while True:
         url = get_pending_row()
