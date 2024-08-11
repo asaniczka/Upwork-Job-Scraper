@@ -5,12 +5,16 @@ import os
 from urllib.parse import quote
 import asyncio
 import json
+import random
 
 import httpx
 from pydantic import BaseModel, Field, AliasChoices, AliasPath, field_validator
 from wrapworks.files import dump_json
+from dotenv import load_dotenv
 from rich import print
 import ua_generator
+
+load_dotenv()
 
 
 class UpworkClient(BaseModel):
@@ -102,31 +106,12 @@ async def update_row(upwork_link: str, client: UpworkClient):
         print(response.text)
 
 
-async def update_row_as_done(url: str):
-    """"""
-
-    print(f"Updating row {url} as done")
-
-    url = os.getenv("POSTGREST_URL") + "upwork_filtered_jobs" + "?link=eq." + quote(url)
-
-    payload = {
-        "did_augment_client_data": True,
-    }
-    headers = {
-        "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
-        "Authorization": f"Bearer {os.getenv('SUPABASE_CLIENT_ANON_KEY')}",
-        "Content-Type": "application/json",
-    }
-
-    response = await httpx.AsyncClient().patch(url, json=payload, headers=headers)
-
-
 def get_pending_rows() -> list[str] | None:
     """"""
 
     url = os.getenv("POSTGREST_URL") + "upwork_filtered_jobs"
 
-    querystring = {"did_augment_client_data": "eq.false", "select": "link", "limit": 20}
+    querystring = {"did_augment_client_data": "eq.false", "select": "link", "limit": 50}
 
     headers = {
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
@@ -142,6 +127,15 @@ def get_pending_rows() -> list[str] | None:
     return [x["link"] for x in rows]
 
 
+def get_proxy() -> str:
+    print("Getting a new proxy")
+
+    proxies = os.getenv("PROXIES")
+    proxies = json.loads(proxies)
+
+    return random.choice(proxies)
+
+
 async def get_details(cipher: str) -> UpworkClient:
     """"""
     url = f"https://www.upwork.com/job-details/jobdetails/visitor/{cipher}/details"
@@ -154,7 +148,7 @@ async def get_details(cipher: str) -> UpworkClient:
         "x-requested-with": "XMLHttpRequest",
     }
 
-    response = await httpx.AsyncClient(headers=headers).get(url)
+    response = await httpx.AsyncClient(headers=headers, proxy=get_proxy()).get(url)
     client = UpworkClient(**response.json())
 
     return client
@@ -167,12 +161,16 @@ def link_to_cipher(link: str) -> str:
 
 async def handle_row(url: str):
 
-    try:
-        details = await get_details(link_to_cipher(url))
-        await update_row(url, details)
-    except Exception as e:
-        print("Exception in a URL", url, type(e).__name__, e)
-        raise
+    retries = 0
+    while retries < 3:
+        try:
+            details = await get_details(link_to_cipher(url))
+            await update_row(url, details)
+            break
+        except Exception as e:
+            print("Exception in a URL", url, type(e).__name__, e)
+            print(e)
+            retries += 1
 
 
 async def async_handler(rows: list[str]):
