@@ -169,8 +169,9 @@ async def handle_row(url: str):
             break
         except Exception as e:
             print("Exception in a URL", url, type(e).__name__, e)
-            print(e)
             retries += 1
+    else:
+        raise RuntimeError("Unable to process row")
 
 
 async def async_handler(rows: list[str]):
@@ -198,8 +199,10 @@ def lambda_handler(event, context):
     rows = get_pending_rows()
     if not rows:
         print("No rows available")
-        return json.dumps({"status_code": 200})
+        return json.dumps({"status_code": 200, "status": "No rows available"})
     asyncio.run(async_handler(rows))
+
+    return json.dumps({"status_code": 200, "status": "Rows processed sucessfully"})
 
 
 if __name__ == "__main__":
