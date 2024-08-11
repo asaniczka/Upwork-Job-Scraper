@@ -8,7 +8,14 @@ import json
 import random
 
 import httpx
-from pydantic import BaseModel, Field, AliasChoices, AliasPath, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    AliasChoices,
+    AliasPath,
+    field_validator,
+    ValidationError,
+)
 from wrapworks.files import dump_json
 from dotenv import load_dotenv
 from rich import print
@@ -96,7 +103,6 @@ async def update_row(upwork_link: str, client: UpworkClient):
         "Content-Type": "application/json",
     }
     params = {"link": "eq." + upwork_link}
-    print(params)
 
     response = await httpx.AsyncClient(headers=headers).patch(
         url, json=payload, params=params
@@ -167,6 +173,8 @@ async def handle_row(url: str):
             details = await get_details(link_to_cipher(url))
             await update_row(url, details)
             break
+        except ValidationError:
+            retries += 1
         except Exception as e:
             print("Exception in a URL", url, type(e).__name__, e)
             retries += 1
@@ -202,7 +210,7 @@ def lambda_handler(event, context):
         return json.dumps({"status_code": 200, "status": "No rows available"})
     asyncio.run(async_handler(rows))
 
-    return json.dumps({"status_code": 200, "status": "Rows processed sucessfully"})
+    return json.dumps({"status_code": 200, "status": "Rows processed successfully"})
 
 
 if __name__ == "__main__":
