@@ -28,7 +28,7 @@ jobs:
           SUPABASE_CLIENT_ANON_KEY: ${{secrets.SUPABASE_CLIENT_ANON_KEY}}
           AUTHORIZER_URL: ${{secrets.AUTHORIZER_URL}}
           AUTH_SECRET: ${{secrets.AUTH_SECRET}}
-          PROXY: ${{secrets.PROXY}}
+          PROXY_URL: ${{secrets.PROXY_URL}}
         run: . venv/bin/activate && python3 -m unittest
 
       - name: Create archive of dependencies

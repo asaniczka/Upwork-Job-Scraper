@@ -9,6 +9,7 @@ import os
 from datetime import datetime
 import asyncio
 import json
+import random
 
 from pydantic import (
     BaseModel,
@@ -173,7 +174,23 @@ def get_auth_token(use_authorizer=False) -> str:
         print("Error fetching token from postgres", error)
 
 
-def collect_jobs(auth_token: str) -> dict | None:
+def download_proxies() -> list[str]:
+    res = httpx.get(os.getenv("PROXY_URL"), timeout=5)
+    return res.text.split()
+
+
+def get_proxy(proxies: list[str]) -> str:
+    """"""
+
+    print("Getting a new proxy")
+
+    proxy = random.choice(proxies)
+    ip, port, user, password = proxy.split(":")
+
+    return "http://" + user + ":" + password + "@" + ip + ":" + port
+
+
+def collect_jobs(auth_token: str, proxies: list[str]) -> dict | None:
     """
     ### Description:
         - Collects job postings from the Upwork API using the provided authorization token.
@@ -245,10 +262,21 @@ def collect_jobs(auth_token: str) -> dict | None:
         "Connection": "keep-alive",
     }
 
-    response = httpx.post(url, json=payload, headers=headers, proxy=os.getenv("PROXY"))
+    retries = 0
+    while retries < 10:
+        try:
+            response = httpx.post(
+                url, json=payload, headers=headers, proxy=get_proxy(proxies)
+            )
 
-    if response.status_code != 200:
-        print(response.text)
+            if response.status_code == 407:
+                raise RuntimeError("Invalid Proxy")
+            if response.status_code != 200:
+                print(response.text)
+        except (RuntimeError, httpx.ProxyError):
+            print("Error on proxy. Retrying")
+            retries += 1
+            continue
 
     return response.json()
 
@@ -333,7 +361,8 @@ def lambda_handler(event, context):
         try:
             use_authorizor = retries > 0
             auth_token = get_auth_token(use_authorizor)
-            raw_feed = collect_jobs(auth_token)
+            proxies = download_proxies()
+            raw_feed = collect_jobs(auth_token, proxies)
             jobs = JobList(**raw_feed)
             break
         except Exception as e:
@@ -347,6 +376,7 @@ def lambda_handler(event, context):
         return {"statusCode": 500, "body": json.dumps("Unable to extract from upwork")}
 
     asyncio.run(handle_load(jobs))
+    print("All good. We Done!")
     return {"statusCode": 200, "body": json.dumps("All Good")}
 
 
