@@ -9,9 +9,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
       - name: Install Venv
         working-directory: src/job_fetcher
@@ -42,7 +42,7 @@ jobs:
         run: cd ./src && zip -g ../job_fetcher.zip -r .
 
       - name: Upload zip file artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: job_fetcher
           path: src/job_fetcher/job_fetcher.zip
@@ -60,7 +60,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: Download job_fetcher.zip
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: job_fetcher
 

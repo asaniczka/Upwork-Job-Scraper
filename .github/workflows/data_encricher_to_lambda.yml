@@ -3,15 +3,15 @@ on:
     branches:
       - main
 jobs:
-  job-fetcher-to-zip:
+  data-enricher-to-zip:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: '3.12'
 
       - name: Install Venv
         working-directory: src/data_enricher
@@ -40,14 +40,14 @@ jobs:
         run: cd ./v2/src && zip -g ../upwork_data_enricher.zip -r .
 
       - name: Upload zip file artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: upwork_data_enricher
           path: src/data_enricher/upwork_data_enricher.zip
 
-  job-fetcher-to-aws:
+  data-enricher-to-aws:
     runs-on: ubuntu-latest
-    needs: [job-fetcher-to-zip]
+    needs: [data-enricher-to-zip]
     steps:
       - name: Install AWS CLI
         uses: unfor19/install-aws-cli-action@v1
@@ -58,7 +58,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: Download upwork_data_enricher.zip
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: upwork_data_enricher
 

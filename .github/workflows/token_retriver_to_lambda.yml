@@ -9,9 +9,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: '3.12'
 
       - name: Install Venv
         working-directory: src/authorizer
@@ -41,7 +41,7 @@ jobs:
         run: cd ./src && zip -g ../token_retriver.zip -r .
 
       - name: Upload zip file artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: token_retriver
           path: src/authorizer/token_retriver.zip
@@ -59,7 +59,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
       - name: Download token_retriver.zip
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: token_retriver
 
