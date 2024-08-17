@@ -1,5 +1,0 @@
-
-services:
-  worker:
-    build: .
-    command: python3 src/orchestrator/manual_run.py

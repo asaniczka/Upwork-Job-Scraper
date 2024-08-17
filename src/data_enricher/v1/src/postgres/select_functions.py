@@ -10,7 +10,7 @@ cwdtoenv()
 load_dotenv()
 
 
-def get_pending_row() -> str | None:
+def get_pending_enrich_row() -> str | None:
     """
     ### Description:
         - Fetches a single pending row from the database that
@@ -44,6 +44,29 @@ def get_pending_row() -> str | None:
     return rows[0]["link"]
 
 
+def get_pending_hire_rate_row() -> str | None:
+    """"""
+
+    print("Getting a new hire rate")
+
+    url = os.getenv("POSTGREST_URL") + "/upwork_filtered_jobs"
+
+    querystring = {"got_hire_history": "eq.false", "select": "link", "limit": 1}
+
+    headers = {
+        "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
+        "Authorization": f"Bearer {os.getenv('SUPABASE_CLIENT_ANON_KEY')}",
+        "Content-Type": "application/json",
+    }
+
+    response = httpx.get(url, headers=headers, params=querystring)
+
+    rows = response.json()
+    if not rows:
+        return None
+    return rows[0]["link"]
+
+
 if __name__ == "__main__":
-    link = get_pending_row()
+    link = get_pending_enrich_row()
     print(link)

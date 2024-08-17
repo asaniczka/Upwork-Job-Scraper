@@ -1,6 +1,6 @@
 """"""
 
-import datetime
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
@@ -25,3 +25,4 @@ class DBUpworkContracts(Base):
     total_hours: Mapped[float]
     total_paid: Mapped[float]
     hourly_rate: Mapped[Optional[float]] = mapped_column(nullable=True)
+    scraped_freelancer: Mapped[bool] = mapped_column(nullable=True, default=False)

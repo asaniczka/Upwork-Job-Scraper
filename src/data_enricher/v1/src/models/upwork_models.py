@@ -110,4 +110,6 @@ class PastJob(BaseModel):
 
 
 class WorkHistory(BaseModel):
-    work_history: list[PastJob] = Field(validation_alias=AliasPath("workHistory"))
+    work_history: list[PastJob] = Field(
+        validation_alias=AliasPath("workHistory"), default_factory=list
+    )

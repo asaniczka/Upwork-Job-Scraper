@@ -21,7 +21,7 @@ import chompjs
 cwdtoenv()
 load_dotenv()
 
-from src.scraper.browser_worker import get_page
+from src.upwork_accounts.browser_handlers import get_page
 from src.models.upwork_models import PostingAttributes, OPENAPI_SCHEMA
 from src.models.genai_models import (
     ValidLLMModels,
