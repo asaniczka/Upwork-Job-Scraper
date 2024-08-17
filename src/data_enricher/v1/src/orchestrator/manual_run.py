@@ -15,8 +15,8 @@ load_dotenv()
 cwdtoenv()
 
 from src.postgres.select_functions import (
-    get_pending_enrich_row,
-    get_pending_hire_rate_row,
+    get_pending_client_data_row,
+    get_pending_hire_history_row,
 )
 from src.postgres.update_functions import (
     update_row,
@@ -30,11 +30,11 @@ from src.formatter.format_cipher import get_cipher
 from src.errors.common_errors import NotLoggedIn
 
 
-def attribute_executor():
+def client_data_executor():
     """"""
 
     while True:
-        url = get_pending_enrich_row()
+        url = get_pending_client_data_row()
         if not url:
             print("No more enrich rows left to process")
             break
@@ -49,14 +49,17 @@ def attribute_executor():
             update_row_as_done(url)
 
 
-def hire_rate_executor():
+def hire_history_executor():
     """"""
     count = 0
     while True:
-        if count // 30 == 0:
+        count += 1
+        if count == 30:
+            print("Sleeping 60")
             time.sleep(60)
+            count = 0
 
-        url = get_pending_hire_rate_row()
+        url = get_pending_hire_history_row()
         if not url:
             print("No more hire rows left to process")
             break
@@ -65,7 +68,6 @@ def hire_rate_executor():
             cipher = get_cipher(url)
             handle_single_client(cipher)
             update_hire_history_as_done(url)
-            break
         except NotLoggedIn:
             do_login()
             continue
@@ -75,4 +77,4 @@ def hire_rate_executor():
 
 
 if __name__ == "__main__":
-    hire_rate_executor()
+    hire_history_executor()

@@ -3,7 +3,7 @@
 import time
 import random
 
-from src.orchestrator.manual_run import attribute_executor, hire_rate_executor
+from src.orchestrator.manual_run import client_data_executor, hire_rate_executor
 from src.upwork_accounts.browser_handlers import do_login
 
 
@@ -14,7 +14,7 @@ def executor():
 
     while True:
         try:
-            attribute_executor()
+            client_data_executor()
             hire_rate_executor()
         except Exception as e:
             print(e)

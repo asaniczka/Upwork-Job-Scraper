@@ -12,6 +12,7 @@ def get_cipher(url: str):
 
     if "_%7E" in url:
         temp = url.split("_%7E")[-1].split("?")[0]
+        temp = "~" + temp
         if len(temp) > 10:
             return temp.strip()
 

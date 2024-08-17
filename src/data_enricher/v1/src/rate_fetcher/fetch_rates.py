@@ -7,6 +7,7 @@ from rich import print
 from dotenv import load_dotenv
 import httpx
 import ua_generator
+import traceback
 
 load_dotenv()
 cwdtoenv()
@@ -37,7 +38,7 @@ def test():
 def save_to_db(work_history: WorkHistory):
     """"""
 
-    if not work_history:
+    if not work_history.work_history:
         return
 
     assert isinstance(
@@ -88,15 +89,21 @@ def handle_single_client(cipher: str):
 
     try:
         res = get_history(cipher)
+        if not res:
+            print("No response from Upwork")
+            return
+
         if "details" in res and "not authenticated" in res.get("details", ""):
             raise NotLoggedIn()
 
         work_history = WorkHistory(**res)
+        print(f"This client has {len(work_history.work_history)} past hires")
         save_to_db(work_history)
     except Exception as e:
+        traceback.print_exc()
         print("Error processing a client", cipher, type(e).__name__, e)
 
 
 if __name__ == "__main__":
-    cipher = "~01d8401788c08f98a3"
+    cipher = "~01ca8dd0ca558e3386"
     handle_single_client(cipher)

@@ -11,6 +11,7 @@ from pydantic import (
     field_serializer,
     HttpUrl,
 )
+import pytz
 
 
 class UpworkClient(BaseModel):
@@ -104,6 +105,10 @@ class PastJob(BaseModel):
 
         if self.start_date and self.end_date:
             duration = self.end_date - self.start_date
+            self.duration_days = duration.days
+        elif self.start_date:
+            end_date = datetime.now(pytz.UTC)
+            duration = end_date - self.start_date
             self.duration_days = duration.days
 
         return self

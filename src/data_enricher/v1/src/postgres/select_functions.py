@@ -10,7 +10,7 @@ cwdtoenv()
 load_dotenv()
 
 
-def get_pending_enrich_row() -> str | None:
+def get_pending_client_data_row() -> str | None:
     """
     ### Description:
         - Fetches a single pending row from the database that
@@ -24,7 +24,7 @@ def get_pending_enrich_row() -> str | None:
             are available.
     """
 
-    print("Getting a new row")
+    print("Getting a new row to enrich client data")
 
     url = os.getenv("POSTGREST_URL") + "/upwork_filtered_jobs"
 
@@ -44,10 +44,10 @@ def get_pending_enrich_row() -> str | None:
     return rows[0]["link"]
 
 
-def get_pending_hire_rate_row() -> str | None:
+def get_pending_hire_history_row() -> str | None:
     """"""
 
-    print("Getting a new hire rate")
+    print("Getting a new hire history row")
 
     url = os.getenv("POSTGREST_URL") + "/upwork_filtered_jobs"
 
@@ -68,5 +68,5 @@ def get_pending_hire_rate_row() -> str | None:
 
 
 if __name__ == "__main__":
-    link = get_pending_enrich_row()
+    link = get_pending_client_data_row()
     print(link)
