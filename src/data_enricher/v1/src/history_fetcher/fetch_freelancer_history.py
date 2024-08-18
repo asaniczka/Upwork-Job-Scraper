@@ -1,7 +1,8 @@
 """"""
 
 # pylint: disable = wrong-import-position
-from wrapworks.files import load_json
+
+from datetime import datetime
 from wrapworks import cwdtoenv
 from wrapworks.files import dump_json
 from rich import print
@@ -10,6 +11,7 @@ import httpx
 import ua_generator
 import traceback
 from sqlalchemy.exc import IntegrityError
+from pydantic import ValidationError
 
 load_dotenv()
 cwdtoenv()
@@ -92,7 +94,7 @@ def handle_freelancer_profile(cipher: str) -> FreelancerIdentity | None:
         print("No response for freelancer from Upwork")
         return
 
-    if "error" in profile:
+    if "error" in profile and "Refresh the page and sign in again" in profile["error"]:
         raise NotLoggedIn()
 
     # dump_json("profile.json", profile)
@@ -118,6 +120,9 @@ def handle_freelancer_profile(cipher: str) -> FreelancerIdentity | None:
                 f"This freelancer has {len(work_history.work_history)} {timeline} hires"
             )
             save_work_history_to_db(work_history)
+        except ValidationError:
+            dump_json("logs/" + str(datetime.now()) + ".json", res)
+            raise
         except Exception as e:
             traceback.print_exc()
             print(

@@ -30,6 +30,7 @@ def update_freelancer_in_db(freelancer: FreelancerIdentity):
             db_freelancer.name = freelancer.name
             db_freelancer.user_id = freelancer.user_id
             db_freelancer.did_scrape = True
+            print(db_freelancer.name)
             session.commit()
         except Exception as e:
             print("Error in a transaction", type(e), e)

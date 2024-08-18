@@ -6,6 +6,7 @@ Module to manually trigger data augmentation
 
 import json
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from wrapworks import cwdtoenv
 from dotenv import load_dotenv
@@ -32,7 +33,10 @@ from src.sqlalchemy.update_functions import (
     mark_freelancer_as_scraped,
     update_freelancer_in_db,
 )
-from src.sqlalchemy.select_functions import get_freelancer_from_db
+from src.sqlalchemy.select_functions import (
+    get_freelancer_from_db,
+    get_batch_freelancers_from_db,
+)
 from src.errors.common_errors import NotLoggedIn
 
 
@@ -75,23 +79,43 @@ def hire_history_executor():
             update_hire_history_as_done(url)
 
 
+def handler_freelancer_history_threaded(cipher: str):
+    """"""
+
+    try:
+        freelancer = handle_freelancer_profile(cipher)
+        update_freelancer_in_db(freelancer)
+    except NotLoggedIn:
+        raise
+    except Exception as e:
+        print("Unable to get freelancer history: ", cipher, type(e).__name__, e)
+        mark_freelancer_as_scraped(cipher)
+
+
 def freelancer_history_executor():
     """"""
+    needs_login = False
     while True:
-        cipher = get_freelancer_from_db()
-        if not cipher:
+        if needs_login:
+            do_login()
+            needs_login = False
+        ciphers = get_batch_freelancers_from_db(30)
+        if not ciphers:
             print("No more freelancer rows left to process")
             break
 
-        try:
-            freelancer = handle_freelancer_profile(cipher)
-            update_freelancer_in_db(freelancer)
-        except NotLoggedIn:
-            do_login()
-            continue
-        except Exception as e:
-            print("Unable to get freelancer history: ", cipher, type(e).__name__, e)
-            mark_freelancer_as_scraped(cipher)
+        with ThreadPoolExecutor(max_workers=20) as tpe:
+            futures = [
+                tpe.submit(handler_freelancer_history_threaded, x) for x in ciphers
+            ]
+
+            for future in as_completed(futures):
+                try:
+                    _ = future.result()
+                except NotLoggedIn:
+                    needs_login = True
+                except Exception as e:
+                    print("Unknwon Exception in tpe:", type(e).__name__, e)
 
 
 if __name__ == "__main__":

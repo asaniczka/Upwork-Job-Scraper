@@ -14,14 +14,34 @@ from src.models.db_models import DBFreelancerIdentity
 def get_freelancer_from_db() -> str | None:
     """"""
 
-    print("Getting freelancer to db")
+    print("Getting freelancer from db")
     with SESSIONMAKER() as session:
 
-        db_freelancer = session.query(DBFreelancerIdentity).first()
+        db_freelancer = (
+            session.query(DBFreelancerIdentity)
+            .filter(DBFreelancerIdentity.did_scrape != True)
+            .first()
+        )
         if db_freelancer:
             return db_freelancer.cipher
         return None
 
 
+def get_batch_freelancers_from_db(limit=10) -> list[str] | None:
+
+    print(f"Getting {limit} freelancers from db")
+    with SESSIONMAKER() as session:
+
+        db_freelancers = (
+            session.query(DBFreelancerIdentity)
+            .filter(DBFreelancerIdentity.did_scrape != True)
+            .limit(limit)
+            .all()
+        )
+        if db_freelancers:
+            return [x.cipher for x in db_freelancers]
+        return None
+
+
 if __name__ == "__main__":
-    get_freelancer_from_db()
+    get_batch_freelancers_from_db()
