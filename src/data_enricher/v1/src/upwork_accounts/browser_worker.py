@@ -25,7 +25,7 @@ cwdtoenv()
 load_dotenv()
 
 
-def get_cookies(make_simple_dict: bool = False) -> list[dict] | dict:
+def get_cookies(make_simple_dict: bool = False) -> list[dict] | dict | list:
     """
     ### Description:
         - Retrieves saved cookies from a JSON file to restore
@@ -37,6 +37,10 @@ def get_cookies(make_simple_dict: bool = False) -> list[dict] | dict:
     """
 
     print("Getting cookies")
+    path = "src/upwork_accounts/temp/cookies.json"
+    if not os.path.exists(path):
+        return []
+
     with open("src/upwork_accounts/temp/cookies.json", "r", encoding="utf-8") as rf:
         cookies = json.load(rf)
 
@@ -82,6 +86,10 @@ def login():
     """"""
 
     driver = get_driver()
+    driver.get("https://www.upwork.com/")
+    cookies = get_cookies()
+    for i in cookies:
+        driver.add_cookie(i)
     driver.get("https://www.upwork.com/ab/account-security/login")
 
     # enter username
@@ -117,6 +125,7 @@ def login():
     # press continue
     continue_btn = driver.find_element(By.CSS_SELECTOR, "button#login_control_continue")
     continue_btn.click()
+    time.sleep(10)
 
     driver.get("https://www.upwork.com/nx/search/jobs/?nbs=1&q=backend")
 

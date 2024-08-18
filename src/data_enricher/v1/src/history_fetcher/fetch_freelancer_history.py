@@ -47,8 +47,7 @@ def get_profile(cipher: str) -> dict:
 
     response = httpx.get(url, headers=headers, params=params)
 
-    if response.status_code == 200:
-        return response.json()
+    return response.json()
 
 
 def get_contracts(user_id: str, in_progress: bool = False) -> dict:

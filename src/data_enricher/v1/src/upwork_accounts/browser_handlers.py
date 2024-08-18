@@ -50,4 +50,6 @@ def get_page(url: str) -> str | None:
 
 def do_login():
     """"""
+
+    print("Trying to login to account")
     login()
