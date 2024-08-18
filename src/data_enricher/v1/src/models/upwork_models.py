@@ -114,7 +114,27 @@ class PastJob(BaseModel):
         return self
 
 
+class FreelancerPastJob(BaseModel):
+    job_id: str | None = None
+    is_fake_job_id: bool = True
+    job_title: str = Field(validation_alias=AliasPath("title"))
+    start_date: datetime | None = Field(validation_alias=AliasPath("startedOn"))
+    end_date: datetime | None = Field(validation_alias=AliasPath("endedOn"))
+    duration_days: int | None = None
+    freelancer_name: str | None = None
+    freelancer_id: str | None = None
+    is_fake_freelancer_id: bool = False
+    total_hours: float = Field(validation_alias=AliasPath("totalHours"))
+    total_paid: float = Field(validation_alias=(AliasPath("totalCharges", "amount")))
+    hourly_rate: float | None = Field(
+        validation_alias=AliasChoices(
+            AliasPath("hourlyRate", "amount"), AliasPath("hourlyRate")
+        )
+    )
+
+
 class WorkHistory(BaseModel):
-    work_history: list[PastJob] = Field(
-        validation_alias=AliasPath("workHistory"), default_factory=list
+    work_history: list[PastJob] | list[FreelancerPastJob] = Field(
+        validation_alias=AliasChoices(AliasPath("workHistory"), AliasPath("pageItems")),
+        default_factory=list,
     )

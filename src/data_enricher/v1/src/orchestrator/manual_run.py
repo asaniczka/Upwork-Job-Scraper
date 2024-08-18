@@ -25,7 +25,7 @@ from src.postgres.update_functions import (
 )
 from src.upwork_accounts.browser_handlers import get_page, do_login
 from src.attribute_extractor.get_attributes import entry_extract_attributes
-from src.rate_fetcher.fetch_rates import handle_single_client
+from src.history_fetcher.fetch_client_history import handle_single_client
 from src.formatter.format_cipher import get_cipher
 from src.errors.common_errors import NotLoggedIn
 

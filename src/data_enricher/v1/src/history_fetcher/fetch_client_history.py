@@ -8,52 +8,16 @@ from dotenv import load_dotenv
 import httpx
 import ua_generator
 import traceback
+from sqlalchemy.exc import IntegrityError
 
 load_dotenv()
 cwdtoenv()
 
 from src.upwork_accounts.browser_worker import get_cookies
-from src.upwork_accounts.browser_worker import login
+from src.sqlalchemy.insert_functions import save_to_db
 
-from src.sqlalchemy.core_sqlalchemy import SESSIONMAKER
 from src.models.upwork_models import WorkHistory
-from src.models.db_models import DBUpworkContracts
 from src.errors.common_errors import NotLoggedIn
-
-
-def test():
-    raw_data = load_json("src/temp/sample.json")
-    work_history = WorkHistory(**raw_data)
-
-    with SESSIONMAKER() as session:
-        # pylint:disable=not-an-iterable
-        for i in work_history.work_history:
-            job = i.model_dump()
-            job = DBUpworkContracts(**job)
-            session.merge(job)
-
-        session.commit()
-
-
-def save_to_db(work_history: WorkHistory):
-    """"""
-
-    if not work_history.work_history:
-        return
-
-    assert isinstance(
-        work_history, WorkHistory
-    ), f"Expected WorkHistory, but got type {type(work_history)}"
-
-    print("Adding work history to db")
-    with SESSIONMAKER() as session:
-        # pylint:disable=not-an-iterable
-        for i in work_history.work_history:
-            job = i.model_dump()
-            job = DBUpworkContracts(**job)
-            session.merge(job)
-
-        session.commit()
 
 
 def get_history(cipher: str) -> dict:

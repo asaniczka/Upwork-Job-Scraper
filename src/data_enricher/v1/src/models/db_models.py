@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
+from sqlalchemy import UniqueConstraint
 
 
 class Base(DeclarativeBase):
@@ -25,4 +26,11 @@ class DBUpworkContracts(Base):
     total_hours: Mapped[float]
     total_paid: Mapped[float]
     hourly_rate: Mapped[Optional[float]] = mapped_column(nullable=True)
-    scraped_freelancer: Mapped[bool] = mapped_column(nullable=True, default=False)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "job_title",
+            "freelancer_id",
+            name="unique_upwork_contracts_jobtitle_freelancerid",
+        ),
+    )
