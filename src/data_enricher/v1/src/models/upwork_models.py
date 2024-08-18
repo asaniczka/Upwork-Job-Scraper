@@ -115,7 +115,7 @@ class PastJob(BaseModel):
 
 
 class FreelancerPastJob(BaseModel):
-    job_id: str | None = None
+    job_id: str | None = Field(validation_alias=AliasPath("openingUid"))
     is_fake_job_id: bool = True
     job_title: str = Field(validation_alias=AliasPath("title"))
     start_date: datetime | None = Field(validation_alias=AliasPath("startedOn"))
@@ -132,9 +132,46 @@ class FreelancerPastJob(BaseModel):
         )
     )
 
+    @model_validator(mode="after")
+    def _validate_id(self):
+
+        if not self.job_id:
+            self.job_id = str(uuid4())
+            self.is_fake_job_id = True
+
+        return self
+
+    @model_validator(mode="after")
+    def _count_contract_days(self):
+
+        if self.start_date and self.end_date:
+            duration = self.end_date - self.start_date
+            self.duration_days = duration.days
+        elif self.start_date:
+            end_date = datetime.now(pytz.UTC)
+            duration = end_date - self.start_date
+            self.duration_days = duration.days
+
+        return self
+
+
+class FreelancerIdentity(BaseModel):
+    cipher: str = Field(validation_alias=AliasPath("profile", "identity", "ciphertext"))
+    user_id: str = Field(validation_alias=AliasPath("profile", "identity", "uid"))
+    name: str = Field(validation_alias=AliasPath("profile", "profile", "name"))
+    country: str = Field(
+        validation_alias=AliasPath("profile", "profile", "location", "country")
+    )
+
 
 class WorkHistory(BaseModel):
     work_history: list[PastJob] | list[FreelancerPastJob] = Field(
         validation_alias=AliasChoices(AliasPath("workHistory"), AliasPath("pageItems")),
         default_factory=list,
     )
+
+    def add_freelancer_data(self, name: str, uid: str):
+        # pylint:disable=not-an-iterable
+        for contract in self.work_history:
+            contract.freelancer_name = name
+            contract.freelancer_id = uid

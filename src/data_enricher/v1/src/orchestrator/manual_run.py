@@ -26,7 +26,13 @@ from src.postgres.update_functions import (
 from src.upwork_accounts.browser_handlers import get_page, do_login
 from src.attribute_extractor.get_attributes import entry_extract_attributes
 from src.history_fetcher.fetch_client_history import handle_single_client
+from src.history_fetcher.fetch_freelancer_history import handle_freelancer_profile
 from src.formatter.format_cipher import get_cipher
+from src.sqlalchemy.update_functions import (
+    mark_freelancer_as_scraped,
+    update_freelancer_in_db,
+)
+from src.sqlalchemy.select_functions import get_freelancer_from_db
 from src.errors.common_errors import NotLoggedIn
 
 
@@ -51,14 +57,7 @@ def client_data_executor():
 
 def hire_history_executor():
     """"""
-    count = 0
     while True:
-        count += 1
-        if count == 30:
-            print("Sleeping 60")
-            time.sleep(60)
-            count = 0
-
         url = get_pending_hire_history_row()
         if not url:
             print("No more hire rows left to process")
@@ -76,5 +75,24 @@ def hire_history_executor():
             update_hire_history_as_done(url)
 
 
+def freelancer_history_executor():
+    """"""
+    while True:
+        cipher = get_freelancer_from_db()
+        if not cipher:
+            print("No more freelancer rows left to process")
+            break
+
+        try:
+            freelancer = handle_freelancer_profile(cipher)
+            update_freelancer_in_db(freelancer)
+        except NotLoggedIn:
+            do_login()
+            continue
+        except Exception as e:
+            print("Unable to get freelancer history: ", cipher, type(e).__name__, e)
+            mark_freelancer_as_scraped(cipher)
+
+
 if __name__ == "__main__":
-    hire_history_executor()
+    freelancer_history_executor()

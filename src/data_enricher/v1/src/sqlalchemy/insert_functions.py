@@ -5,11 +5,11 @@ from sqlalchemy.exc import IntegrityError
 
 
 from src.sqlalchemy.core_sqlalchemy import SESSIONMAKER
-from src.models.upwork_models import WorkHistory
-from src.models.db_models import DBUpworkContracts
+from src.models.upwork_models import WorkHistory, FreelancerIdentity
+from src.models.db_models import DBUpworkContracts, DBFreelancerIdentity
 
 
-def save_to_db(work_history: WorkHistory):
+def save_work_history_to_db(work_history: WorkHistory):
     """"""
 
     if not work_history.work_history:
@@ -29,7 +29,7 @@ def save_to_db(work_history: WorkHistory):
                 job = DBUpworkContracts(**job)
                 session.merge(job)
                 session.commit()
-            except IntegrityError:
+            except IntegrityError as e:
                 session.rollback()
             except Exception as e:
                 print("Error in a transaction", type(e), e)

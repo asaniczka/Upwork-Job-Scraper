@@ -5,6 +5,8 @@ from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
 from sqlalchemy import UniqueConstraint
+from sqlalchemy.types import TIMESTAMP
+from sqlalchemy.sql import func
 
 
 class Base(DeclarativeBase):
@@ -26,6 +28,9 @@ class DBUpworkContracts(Base):
     total_hours: Mapped[float]
     total_paid: Mapped[float]
     hourly_rate: Mapped[Optional[float]] = mapped_column(nullable=True)
+    inserted_date: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.now
+    )
 
     __table_args__ = (
         UniqueConstraint(
@@ -33,4 +38,18 @@ class DBUpworkContracts(Base):
             "freelancer_id",
             name="unique_upwork_contracts_jobtitle_freelancerid",
         ),
+    )
+
+
+class DBFreelancerIdentity(Base):
+
+    __tablename__ = "upwork_freelancer_identity"
+
+    cipher: Mapped[str] = mapped_column(primary_key=True)
+    user_id: Mapped[str] = mapped_column(nullable=True)
+    name: Mapped[str] = mapped_column(nullable=True)
+    country: Mapped[str] = mapped_column(nullable=True)
+    did_scrape: Mapped[bool] = mapped_column(default=False)
+    first_seen: Mapped[Optional[datetime]] = mapped_column(
+        TIMESTAMP(timezone=True), default=datetime.now
     )
