@@ -50,7 +50,7 @@ The Upwork Job Scraper Ecosystem enables the collection, enrichment, and storage
 
 ## Architecture Diagram
 
-![](resources/architecture.png)
+![](resources/architecture_v1.png)
 
 ## Cost Efficiency
 
