@@ -37,6 +37,9 @@ from src.sqlalchemy.select_functions import (
     get_freelancer_from_db,
     get_batch_freelancers_from_db,
 )
+from src.orchestrator.helpers.threaded_helpers import (
+    handler_freelancer_history_threaded,
+)
 from src.errors.common_errors import NotLoggedIn
 
 
@@ -77,19 +80,6 @@ def hire_history_executor():
         except Exception as e:
             print("Unable to get hire history: ", url, type(e).__name__, e)
             update_hire_history_as_done(url)
-
-
-def handler_freelancer_history_threaded(cipher: str):
-    """"""
-
-    try:
-        freelancer = handle_freelancer_profile(cipher)
-        update_freelancer_in_db(freelancer)
-    except NotLoggedIn:
-        raise
-    except Exception as e:
-        print("Unable to get freelancer history: ", cipher, type(e).__name__, e)
-        mark_freelancer_as_scraped(cipher)
 
 
 def freelancer_history_executor():
