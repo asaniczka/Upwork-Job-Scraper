@@ -90,6 +90,25 @@ def update_row_as_done(url: str):
     response = httpx.patch(url, json=payload, headers=headers)
 
 
+def update_hire_history_as_done(url: str):
+    """"""
+
+    print(f"Updating row {url} as hire history done")
+
+    url = (
+        os.getenv("POSTGREST_URL") + "/upwork_filtered_jobs" + "?link=eq." + quote(url)
+    )
+
+    payload = {"got_hire_history": True}
+    headers = {
+        "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
+        "Authorization": f"Bearer {os.getenv('SUPABASE_CLIENT_ANON_KEY')}",
+        "Content-Type": "application/json",
+    }
+
+    response = httpx.patch(url, json=payload, headers=headers)
+
+
 if __name__ == "__main__":
     import json
 

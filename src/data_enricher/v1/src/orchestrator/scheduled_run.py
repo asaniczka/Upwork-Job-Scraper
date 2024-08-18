@@ -3,20 +3,24 @@
 import time
 import random
 
-from src.orchestrator.manual_run import executor as manual_executor
+from src.orchestrator.manual_run import (
+    client_data_executor,
+    hire_history_executor,
+    freelancer_history_executor,
+)
+from src.upwork_accounts.browser_handlers import do_login
 
 
 def executor():
-    """
-    ### Description:
-        - An infinite loop that continuously calls the `manual_executor`
-          function, providing error handling for any exceptions that may arise.
-        - Introduces a pause of 15 minutes between successive calls to
-          the executor to control the execution rate.
-    """
+    """"""
+
+    do_login()
+
     while True:
         try:
-            manual_executor()
+            client_data_executor()
+            hire_history_executor()
+            freelancer_history_executor()
         except Exception as e:
             print(e)
 
