@@ -1,8 +1,11 @@
 """"""
 
+# pylint:disablt=wrong-import-position
+
 from rich import print
 from wrapworks import cwdtoenv
 from dotenv import load_dotenv
+from sqlalchemy import select
 
 cwdtoenv()
 load_dotenv()
@@ -43,5 +46,24 @@ def get_batch_freelancers_from_db(limit=10) -> list[str] | None:
         return None
 
 
+def learn():
+
+    with SESSIONMAKER() as session:
+
+        stmt = (
+            select(
+                DBFreelancerIdentity.name,
+                DBFreelancerIdentity.cipher,
+                DBFreelancerIdentity.country,
+            )
+            .where(DBFreelancerIdentity.did_scrape == True)
+            .where(DBFreelancerIdentity.name.ilike("%Lina%"))
+            .limit(5)
+        )
+        res = session.execute(stmt)
+        for i in res:
+            print(i)
+
+
 if __name__ == "__main__":
-    get_batch_freelancers_from_db()
+    learn()

@@ -53,3 +53,6 @@ class DBFreelancerIdentity(Base):
     first_seen: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP(timezone=True), default=datetime.now
     )
+
+    def __repr__(self) -> str:
+        return f"{self.cipher}: {self.name} - {self.country}"
