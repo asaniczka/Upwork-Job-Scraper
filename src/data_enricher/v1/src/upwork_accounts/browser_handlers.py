@@ -45,7 +45,7 @@ def get_page(url: str) -> str | None:
 
             source = driver.page_source
             save_cookies(driver.get_cookies())
-            driver.close()
+            driver.quit()
 
             soup = BeautifulSoup(source, "html.parser")
             return soup.get_text(separator="\n")

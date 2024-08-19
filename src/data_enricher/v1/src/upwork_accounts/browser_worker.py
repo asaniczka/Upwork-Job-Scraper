@@ -9,6 +9,7 @@
 import os
 import json
 import time
+from pathlib import Path
 
 from rich import print
 from wrapworks import timeit, cwdtoenv
@@ -37,11 +38,14 @@ def get_cookies(make_simple_dict: bool = False) -> list[dict] | dict | list:
     """
 
     print("Getting cookies")
-    path = "src/upwork_accounts/temp/cookies.json"
-    if not os.path.exists(path):
+    cwd = Path.cwd()
+    folder = Path.joinpath(cwd, "src", "upwork_accounts", "temp")
+    folder.mkdir(parents=True, exist_ok=True)
+    file = Path.joinpath(folder, "cookies.json")
+    if not file.exists():
         return []
 
-    with open("src/upwork_accounts/temp/cookies.json", "r", encoding="utf-8") as rf:
+    with open(file, "r", encoding="utf-8") as rf:
         cookies = json.load(rf)
 
     if make_simple_dict:
@@ -65,17 +69,31 @@ def save_cookies(cookies: list[dict]):
 
     """
     print("Saving cookies")
-    with open("src/upwork_accounts/temp/cookies.json", "w", encoding="utf-8") as wf:
+    cwd = Path.cwd()
+    folder = Path.joinpath(cwd, "src", "upwork_accounts", "temp")
+    folder.mkdir(parents=True, exist_ok=True)
+    file = Path.joinpath(folder, "cookies.json")
+    with open(file, "w", encoding="utf-8") as wf:
         json.dump(cookies, wf)
 
 
+@timeit()
 def get_driver() -> Chrome:
     """"""
-
+    cwd = Path.cwd()
+    folder = cwd / "src" / "upwork_accounts" / "temp" / "chrome"
+    folder.mkdir(parents=True, exist_ok=True)
     options = uc.ChromeOptions()
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-setuid-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--start-maximized")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--disable-gpu")
     driver = uc.Chrome(
         options=options,
-        user_data_dir=os.getcwd() + "/src/scraper/temp/chrome",
+        user_data_dir=folder,
         headless=False,
     )
 
@@ -133,7 +151,7 @@ def login():
     save_cookies(driver.get_cookies())
 
     time.sleep(10)
-    driver.close()
+    driver.quit()
 
 
 if __name__ == "__main__":

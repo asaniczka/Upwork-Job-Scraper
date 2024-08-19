@@ -121,7 +121,6 @@ def handle_freelancer_profile(cipher: str) -> FreelancerIdentity | None:
             )
             save_work_history_to_db(work_history)
         except ValidationError:
-            dump_json("logs/" + str(datetime.now()) + ".json", res)
             raise
         except Exception as e:
             traceback.print_exc()
