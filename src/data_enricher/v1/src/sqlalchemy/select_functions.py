@@ -1,6 +1,6 @@
 """"""
 
-# pylint:disablt=wrong-import-position
+# pylint:disable=wrong-import-position
 
 from rich import print
 from wrapworks import cwdtoenv

@@ -1,7 +1,15 @@
 """Runs the manual orchestrator on a schedule"""
 
+# pylint:disable=wrong-import-position
+
 import time
 import random
+
+from wrapworks import cwdtoenv
+from dotenv import load_dotenv
+
+cwdtoenv()
+load_dotenv()
 
 from src.orchestrator.manual_run import (
     client_data_executor,
@@ -23,7 +31,7 @@ def executor():
             freelancer_history_executor()
         except Exception as e:
             print(e)
-
+        print("Sleeping 15")
         time.sleep(15 * 60)
 
 

@@ -29,27 +29,40 @@ def get_page(url: str) -> str | None:
             could not be loaded.
     """
 
-    print(f"Getting page {url}")
+    retries = 0
+    while retries < 10:
+        print(f"Getting page {url}")
+        try:
 
-    driver = get_driver()
-    driver.get(url)
+            driver = get_driver()
+            driver.get(url)
 
-    cookies = get_cookies()
-    for i in cookies:
-        driver.add_cookie(i)
-    driver.refresh()
-    time.sleep(10)
+            cookies = get_cookies()
+            for i in cookies:
+                driver.add_cookie(i)
+            driver.refresh()
+            time.sleep(10)
 
-    source = driver.page_source
-    save_cookies(driver.get_cookies())
-    driver.close()
+            source = driver.page_source
+            save_cookies(driver.get_cookies())
+            driver.close()
 
-    soup = BeautifulSoup(source, "html.parser")
-    return soup.get_text(separator="\n")
+            soup = BeautifulSoup(source, "html.parser")
+            return soup.get_text(separator="\n")
+        except Exception as e:
+            print("Error when getting page", type(e).__name__, e)
+            retries += 1
 
 
 def do_login():
     """"""
 
-    print("Trying to login to account")
-    login()
+    retries = 0
+    while retries < 10:
+        print("Trying to login to account")
+        try:
+            login()
+            break
+        except Exception as e:
+            print("Error when logging in", type(e).__name__, e)
+            retries += 1
