@@ -23,4 +23,4 @@ RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["./entrypoint.sh"]
 
-CMD [ "python3","./src/orchestrator/scheduled_run.py" ]
+# CMD [ "python3","./src/orchestrator/scheduled_run.py" ]
