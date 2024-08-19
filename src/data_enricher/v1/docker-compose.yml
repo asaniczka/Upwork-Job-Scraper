@@ -1,7 +1,14 @@
 services:
+  fluentd:
+    image: fluent/fluentd:v1.12.0-debian-1.0
+    ports:
+      - 24225:24224
+    volumes:
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf
+      - ./logs:/fluentd/logs
+
   upwork_enricher_app:
     build: .
-    image: upwork_enricher:latest
     command: python3 ./src/orchestrator/scheduled_run.py
     logging:
       driver: fluentd
@@ -11,10 +18,3 @@ services:
     depends_on:
       - fluentd
 
-  fluentd:
-    image: fluent/fluentd:v1.12.0-debian-1.0
-    ports:
-      - 23225:24225
-    volumes:
-      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf
-      - ./logs:/fluentd/logs
