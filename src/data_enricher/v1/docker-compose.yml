@@ -9,6 +9,7 @@ services:
 
   upwork_enricher_app:
     build: .
+    platform: linux/amd64
     command: python3 ./src/orchestrator/scheduled_run.py
     logging:
       driver: fluentd
@@ -17,4 +18,3 @@ services:
         tag: "upwork_enricher.app"
     depends_on:
       - fluentd
-
