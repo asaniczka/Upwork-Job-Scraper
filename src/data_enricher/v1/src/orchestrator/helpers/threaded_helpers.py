@@ -10,13 +10,16 @@ from src.sqlalchemy.update_functions import (
     mark_freelancer_as_scraped,
     update_freelancer_in_db,
 )
+from src.postgres.update_functions import update_hire_history_as_done
+from src.upwork_accounts.browser_handlers import do_login
+from src.history_fetcher.fetch_client_history import handle_single_client
+from src.formatter.format_cipher import get_cipher
 
 from src.errors.common_errors import NotLoggedIn
 
 
 def handler_freelancer_history_threaded(cipher: str):
     """"""
-
     try:
         freelancer = handle_freelancer_profile(cipher)
         update_freelancer_in_db(freelancer)
@@ -25,3 +28,18 @@ def handler_freelancer_history_threaded(cipher: str):
     except Exception as e:
         print("Unable to get freelancer history: ", cipher, type(e).__name__, e)
         mark_freelancer_as_scraped(cipher)
+
+
+def handler_hire_history_threaded(url):
+    """"""
+
+    try:
+        cipher = get_cipher(url)
+        handle_single_client(cipher)
+        update_hire_history_as_done(url)
+    except NotLoggedIn:
+        do_login()
+        return
+    except Exception as e:
+        print("Unable to get hire history: ", url, type(e).__name__, e)
+        update_hire_history_as_done(url)

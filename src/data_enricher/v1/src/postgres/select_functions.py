@@ -44,14 +44,14 @@ def get_pending_client_data_row() -> str | None:
     return rows[0]["link"]
 
 
-def get_pending_hire_history_row() -> str | None:
+def get_pending_hire_history_row(limit: int = 1) -> list[str] | None:
     """"""
 
     print("Getting a new hire history row")
 
     url = os.getenv("POSTGREST_URL") + "/upwork_filtered_jobs"
 
-    querystring = {"got_hire_history": "eq.false", "select": "link", "limit": 1}
+    querystring = {"got_hire_history": "eq.false", "select": "link", "limit": limit}
 
     headers = {
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
@@ -64,7 +64,7 @@ def get_pending_hire_history_row() -> str | None:
     rows = response.json()
     if not rows:
         return None
-    return rows[0]["link"]
+    return [x["link"] for x in rows]
 
 
 if __name__ == "__main__":
