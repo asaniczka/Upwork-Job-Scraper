@@ -103,55 +103,65 @@ def get_driver() -> Chrome:
 def login():
     """"""
 
-    driver = get_driver()
-    driver.get("https://www.upwork.com/")
-    cookies = get_cookies()
-    for i in cookies:
-        driver.add_cookie(i)
-    driver.get("https://www.upwork.com/ab/account-security/login")
-
-    # enter username
     try:
-        username_box = driver.find_element(By.CSS_SELECTOR, "input#login_username")
-    except NoSuchElementException:
-        print("Already logged in")
+        driver = get_driver()
+        driver.get("https://www.upwork.com/")
+        cookies = get_cookies()
+        for i in cookies:
+            driver.add_cookie(i)
+        driver.get("https://www.upwork.com/ab/account-security/login")
+
+        # enter username
+        try:
+            username_box = driver.find_element(By.CSS_SELECTOR, "input#login_username")
+        except NoSuchElementException:
+            print("Already logged in")
+            driver.get("https://www.upwork.com/nx/search/jobs/?nbs=1&q=backend")
+
+            # save session cookies
+            save_cookies(driver.get_cookies())
+
+            time.sleep(10)
+            driver.close()
+            return
+
+        username_box.send_keys(os.environ["UPWORK_EMAIL"])
+        continue_btn = driver.find_element(
+            By.CSS_SELECTOR, "button#login_password_continue"
+        )
+        continue_btn.click()
+
+        # enter password
+        password_box = WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.CSS_SELECTOR, "input#login_password"))
+        )
+        password_box.send_keys(os.environ["UPWORK_PASSWORD"])
+
+        # click save me
+        save_btn = driver.find_element(By.CSS_SELECTOR, "label.air3-checkbox-label")
+        driver.execute_script("arguments[0].click()", save_btn)
+
+        # press continue
+        continue_btn = driver.find_element(
+            By.CSS_SELECTOR, "button#login_control_continue"
+        )
+        continue_btn.click()
+        time.sleep(10)
+
         driver.get("https://www.upwork.com/nx/search/jobs/?nbs=1&q=backend")
 
         # save session cookies
         save_cookies(driver.get_cookies())
 
         time.sleep(10)
-        driver.close()
-        return
+        driver.quit()
+    except Exception as e:
+        try:
+            driver.quit()
+        except:
+            pass
 
-    username_box.send_keys(os.environ["UPWORK_EMAIL"])
-    continue_btn = driver.find_element(
-        By.CSS_SELECTOR, "button#login_password_continue"
-    )
-    continue_btn.click()
-
-    # enter password
-    password_box = WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located((By.CSS_SELECTOR, "input#login_password"))
-    )
-    password_box.send_keys(os.environ["UPWORK_PASSWORD"])
-
-    # click save me
-    save_btn = driver.find_element(By.CSS_SELECTOR, "label.air3-checkbox-label")
-    driver.execute_script("arguments[0].click()", save_btn)
-
-    # press continue
-    continue_btn = driver.find_element(By.CSS_SELECTOR, "button#login_control_continue")
-    continue_btn.click()
-    time.sleep(10)
-
-    driver.get("https://www.upwork.com/nx/search/jobs/?nbs=1&q=backend")
-
-    # save session cookies
-    save_cookies(driver.get_cookies())
-
-    time.sleep(10)
-    driver.quit()
+        raise e
 
 
 if __name__ == "__main__":

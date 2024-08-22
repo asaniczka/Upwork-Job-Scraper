@@ -33,7 +33,6 @@ def get_page(url: str) -> str | None:
     while retries < 10:
         print(f"Getting page {url}")
         try:
-
             driver = get_driver()
             driver.get(url)
 
@@ -50,6 +49,10 @@ def get_page(url: str) -> str | None:
             soup = BeautifulSoup(source, "html.parser")
             return soup.get_text(separator="\n")
         except Exception as e:
+            try:
+                driver.quit()
+            except:
+                pass
             print("Error when getting page", type(e).__name__, e)
             retries += 1
 
