@@ -24,13 +24,18 @@ def executor():
 
     do_login()
 
+    callables = [
+        client_data_executor,
+        hire_history_executor,
+        freelancer_history_executor,
+    ]
     while True:
-        try:
-            client_data_executor()
-            hire_history_executor()
-            freelancer_history_executor()
-        except Exception as e:
-            print(e)
+        for call in callables:
+            try:
+                call()
+            except Exception as e:
+                print("Error in a callable", call.__name__, type(e), e)
+                
         print("Sleeping 15")
         time.sleep(15 * 60)
 

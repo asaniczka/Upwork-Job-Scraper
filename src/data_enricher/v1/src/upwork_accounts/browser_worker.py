@@ -10,6 +10,7 @@ import os
 import json
 import time
 from pathlib import Path
+from contextlib import contextmanager
 
 from rich import print
 from wrapworks import timeit, cwdtoenv
@@ -21,11 +22,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 
-from src.errors.common_errors import NotLoggedIn
-
 
 cwdtoenv()
 load_dotenv()
+
+from src.errors.common_errors import NotLoggedIn
 
 
 def get_cookies(make_simple_dict: bool = False) -> list[dict] | dict | list:
@@ -45,7 +46,7 @@ def get_cookies(make_simple_dict: bool = False) -> list[dict] | dict | list:
     folder.mkdir(parents=True, exist_ok=True)
     file = Path.joinpath(folder, "cookies.json")
     if not file.exists():
-        return []
+        raise NotLoggedIn()
 
     with open(file, "r", encoding="utf-8") as rf:
         cookies = json.load(rf)
@@ -96,24 +97,65 @@ def get_driver() -> Chrome:
     options.add_argument("--start-maximized")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-gpu")
+
     driver = uc.Chrome(
-        options=options,
-        user_data_dir=folder,
-        headless=False,
+        options=options, user_data_dir=folder, headless=False, use_subprocess=False
     )
 
     return driver
 
 
-def login():
+@contextmanager
+def get_session_driver() -> Chrome:
+
+    driver = get_driver()
+    try:
+        driver.get("https://upwork.com")
+        try:
+            cookies = get_cookies()
+            for i in cookies:
+                driver.add_cookie(i)
+        except NotLoggedIn:
+            login()
+
+        yield driver
+    finally:
+        driver.quit()
+
+
+class GetSessionDriver:
+
+    def __init__(self) -> None:
+        self.driver = None
+
+    def __enter__(self) -> Chrome:
+
+        self.driver = get_driver()
+        return self.driver
+
+    def __exit__(self, *args):
+        if self.driver:
+            try:
+                self.driver.quit()
+            except:
+                pass
+
+
+def login(driver: Chrome | None = None):
     """"""
 
+    no_close = True if driver else False
     try:
-        driver = get_driver()
+        if not driver:
+            driver = get_driver()
         driver.get("https://www.upwork.com/")
-        cookies = get_cookies()
-        for i in cookies:
-            driver.add_cookie(i)
+        try:
+            cookies = get_cookies()
+            for i in cookies:
+                driver.add_cookie(i)
+        except NotLoggedIn:
+            pass
+
         driver.get("https://www.upwork.com/ab/account-security/login")
 
         # enter username
@@ -127,7 +169,8 @@ def login():
             save_cookies(driver.get_cookies())
 
             time.sleep(10)
-            driver.close()
+            if not no_close:
+                driver.quit()
             return
 
         username_box.send_keys(os.environ["UPWORK_EMAIL"])
@@ -159,7 +202,8 @@ def login():
         save_cookies(driver.get_cookies())
 
         time.sleep(10)
-        driver.quit()
+        if not no_close:
+            driver.quit()
     except Exception as e:
         try:
             driver.quit()
@@ -170,4 +214,4 @@ def login():
 
 
 if __name__ == "__main__":
-    print(get_cookies(make_simple_dict=True))
+    login()
