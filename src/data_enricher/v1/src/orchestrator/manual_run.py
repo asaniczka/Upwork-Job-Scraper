@@ -115,12 +115,12 @@ def freelancer_history_executor():
             if loops > 500:
                 print("Loops over 500. Let's visit upwork")
                 driver.get("https://upwork.com")
-            ciphers = get_batch_freelancers_from_db(1)
-            if not ciphers:
-                print("No more freelancer rows left to process")
-                break
-
             try:
+                ciphers = get_batch_freelancers_from_db(1)
+                if not ciphers:
+                    print("No more freelancer rows left to process")
+                    break
+
                 freelancer = None
                 freelancer = handle_freelancer_profile_rendered(ciphers[0], driver)
                 print(freelancer)
@@ -134,4 +134,5 @@ def freelancer_history_executor():
 
 
 if __name__ == "__main__":
+    do_login()
     freelancer_history_executor()

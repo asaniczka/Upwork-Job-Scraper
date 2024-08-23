@@ -64,6 +64,7 @@ def get_batch_freelancers_from_db(limit=10) -> list[str] | None:
         )
 
         result = session.execute(stmt, {"limit": limit}).fetchall()
+        session.commit()
         if result:
             return [x[0] for x in result]
         return None

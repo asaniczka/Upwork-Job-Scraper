@@ -115,7 +115,10 @@ def get_contracts_with_render(
 
     driver.get(url)
     content = driver.page_source
-    content = driver.find_element(By.CSS_SELECTOR, "pre")
+    try:
+        content = driver.find_element(By.CSS_SELECTOR, "pre")
+    except Exception as e:
+        print("Error getting json", content)
     parsed_json = json.loads(content.text)
 
     return parsed_json
