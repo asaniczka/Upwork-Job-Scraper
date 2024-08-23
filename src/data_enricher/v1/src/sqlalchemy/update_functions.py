@@ -30,6 +30,7 @@ def update_freelancer_in_db(freelancer: FreelancerIdentity):
             db_freelancer.name = freelancer.name
             db_freelancer.user_id = freelancer.user_id
             db_freelancer.did_scrape = True
+            db_freelancer.in_progress = False
             session.commit()
         except Exception as e:
             print("Error in a transaction", type(e), e)
@@ -50,6 +51,7 @@ def mark_freelancer_as_scraped(cipher: str):
                 .first()
             )
             db_freelancer.did_scrape = True
+            db_freelancer.in_progress = False
             session.commit()
         except Exception as e:
             print("Error in a transaction", type(e), e)

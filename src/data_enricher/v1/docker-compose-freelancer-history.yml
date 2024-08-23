@@ -1,0 +1,20 @@
+services:
+  fluentd:
+    image: fluent/fluentd:v1.12.0-debian-1.0
+    ports:
+      - 24225:24224
+    volumes:
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf
+      - ./logs:/fluentd/logs
+
+  upwork_enricher_app:
+    build: .
+    platform: linux/amd64
+    command: python3 ./src/orchestrator/manual_run.py
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24225
+        tag: "upwork_enricher.app"
+    depends_on:
+      - fluentd

@@ -5,7 +5,7 @@
 from rich import print
 from wrapworks import cwdtoenv
 from dotenv import load_dotenv
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 cwdtoenv()
 load_dotenv()
@@ -35,14 +35,37 @@ def get_batch_freelancers_from_db(limit=10) -> list[str] | None:
     print(f"Getting {limit} freelancers from db")
     with SESSIONMAKER() as session:
 
-        db_freelancers = (
-            session.query(DBFreelancerIdentity)
-            .filter(DBFreelancerIdentity.did_scrape != True)
-            .limit(limit)
-            .all()
+        stmt = text(
+            """WITH
+                temp_cte AS (
+                    SELECT
+                    cipher
+                    FROM
+                    upwork_freelancer_identity
+                    WHERE
+                    did_scrape IS FALSE
+                    AND in_progress IS FALSE
+                    LIMIT :limit
+                    FOR UPDATE
+                )
+                UPDATE upwork_freelancer_identity
+                SET
+                in_progress = TRUE
+                WHERE
+                cipher IN (
+                    SELECT
+                    cipher
+                    FROM
+                    temp_cte
+                )
+                RETURNING
+                cipher
+                """
         )
-        if db_freelancers:
-            return [x.cipher for x in db_freelancers]
+
+        result = session.execute(stmt, {"limit": limit}).fetchall()
+        if result:
+            return [x[0] for x in result]
         return None
 
 
@@ -66,4 +89,4 @@ def learn():
 
 
 if __name__ == "__main__":
-    learn()
+    print(get_batch_freelancers_from_db(1))

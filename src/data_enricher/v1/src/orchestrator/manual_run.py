@@ -125,9 +125,11 @@ def freelancer_history_executor():
                 freelancer = handle_freelancer_profile_rendered(ciphers[0], driver)
                 print(freelancer)
                 update_freelancer_in_db(freelancer)
+            except NotLoggedIn:
+                do_login()
+                continue
             except Exception as e:
                 print("Error processing freelancer", e)
-            finally:
                 mark_freelancer_as_scraped(ciphers[0])
 
 

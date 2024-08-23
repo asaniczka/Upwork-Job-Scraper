@@ -50,6 +50,7 @@ class DBFreelancerIdentity(Base):
     name: Mapped[str] = mapped_column(nullable=True)
     country: Mapped[str] = mapped_column(nullable=True)
     did_scrape: Mapped[bool] = mapped_column(default=False)
+    in_progress: Mapped[bool] = mapped_column(default=False)
     first_seen: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP(timezone=True), default=datetime.now
     )

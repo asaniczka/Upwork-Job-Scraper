@@ -212,6 +212,8 @@ def handle_freelancer_profile_rendered(
             save_work_history_to_db(work_history)
         except ValidationError:
             continue
+        except NotLoggedIn:
+            raise
         except Exception as e:
             traceback.print_exc()
             print(
