@@ -63,6 +63,9 @@ def handle_single_client(cipher: str):
         work_history = WorkHistory(**res)
         print(f"This client has {len(work_history.work_history)} past hires")
         save_work_history_to_db(work_history)
+    except NotLoggedIn:
+        raise
+
     except Exception as e:
         traceback.print_exc()
         print("Error processing a client", cipher, type(e).__name__, e)

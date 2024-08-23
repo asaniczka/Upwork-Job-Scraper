@@ -21,6 +21,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 
+from src.errors.common_errors import NotLoggedIn
+
 
 cwdtoenv()
 load_dotenv()
@@ -47,6 +49,9 @@ def get_cookies(make_simple_dict: bool = False) -> list[dict] | dict | list:
 
     with open(file, "r", encoding="utf-8") as rf:
         cookies = json.load(rf)
+
+    if not cookies:
+        raise NotLoggedIn()
 
     if make_simple_dict:
         all_cookies = {}
@@ -165,4 +170,4 @@ def login():
 
 
 if __name__ == "__main__":
-    login()
+    print(get_cookies(make_simple_dict=True))

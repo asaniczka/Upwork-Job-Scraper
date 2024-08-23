@@ -94,6 +94,7 @@ def handle_freelancer_profile(cipher: str) -> FreelancerIdentity | None:
         print("No response for freelancer from Upwork")
         return
 
+    print(profile)
     if "error" in profile and "Refresh the page and sign in again" in profile["error"]:
         raise NotLoggedIn()
 
