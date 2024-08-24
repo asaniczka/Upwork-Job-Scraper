@@ -133,6 +133,41 @@ async def update_row(upwork_link: str, client: UpworkClient):
         print(response.text)
 
 
+async def increase_try_count(upwork_link: str):
+    """"""
+
+    url = os.getenv("POSTGREST_URL") + "upwork_filtered_jobs"
+    headers = {
+        "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
+        "Authorization": f"Bearer {os.getenv('SUPABASE_CLIENT_ANON_KEY')}",
+        "Content-Type": "application/json",
+    }
+
+    params = {
+        "link": f"eq.{upwork_link}",
+        "select": "client_data_try_count",
+        "limit": 10,
+    }
+    response = await httpx.AsyncClient().get(url, headers=headers, params=params)
+
+    rows = response.json()
+    if not rows:
+        return None
+
+    print(rows)
+    count = rows[0]["client_data_try_count"] + 1
+
+    payload = {"client_data_try_count": count}
+    params = {"link": "eq." + upwork_link}
+
+    response = await httpx.AsyncClient().patch(
+        url, headers=headers, json=payload, params=params
+    )
+    print(response.status_code)
+    if response.status_code >= 400:
+        print(response.text)
+
+
 def get_pending_rows() -> list[str] | None:
     """
     ### Description:
@@ -146,7 +181,12 @@ def get_pending_rows() -> list[str] | None:
 
     url = os.getenv("POSTGREST_URL") + "upwork_filtered_jobs"
 
-    querystring = {"did_augment_client_data": "eq.false", "select": "link", "limit": 10}
+    querystring = {
+        "did_augment_client_data": "eq.false",
+        "client_data_try_count": "lte.2",
+        "select": "link",
+        "limit": 10,
+    }
 
     headers = {
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
@@ -253,6 +293,7 @@ async def handle_row(url: str, proxies: list[str]):
         - `url`: str
             The Upwork job link to process.
     """
+    await increase_try_count(url)
     retries = 0
     while retries < 3:
         try:
@@ -324,4 +365,5 @@ def lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-    lambda_handler(1, 1)
+    # lambda_handler(1, 1)
+    asyncio.run(increase_try_count("https://www.upwork.com/jobs/~019e435b7718f79a48"))
