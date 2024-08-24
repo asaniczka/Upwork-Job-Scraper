@@ -115,6 +115,7 @@ def freelancer_history_executor():
             if loops > 500:
                 print("Loops over 500. Let's visit upwork")
                 driver.get("https://upwork.com")
+                loops = 0
             try:
                 ciphers = get_batch_freelancers_from_db(1)
                 if not ciphers:
