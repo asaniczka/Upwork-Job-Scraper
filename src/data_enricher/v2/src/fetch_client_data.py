@@ -136,6 +136,7 @@ async def update_row(upwork_link: str, client: UpworkClient):
 async def increase_try_count(upwork_link: str):
     """"""
 
+    print("Increasing try count of a link")
     url = os.getenv("POSTGREST_URL") + "upwork_filtered_jobs"
     headers = {
         "apikey": os.getenv("SUPABASE_CLIENT_ANON_KEY"),
@@ -183,7 +184,7 @@ def get_pending_rows() -> list[str] | None:
 
     querystring = {
         "did_augment_client_data": "eq.false",
-        "client_data_try_count": "lte.2",
+        "client_data_try_count": "lt.1",
         "select": "link",
         "limit": 10,
     }
@@ -365,5 +366,5 @@ def lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-    # lambda_handler(1, 1)
-    asyncio.run(increase_try_count("https://www.upwork.com/jobs/~019e435b7718f79a48"))
+    lambda_handler(1, 1)
+    # asyncio.run(increase_try_count("https://www.upwork.com/jobs/~019e435b7718f79a48"))
