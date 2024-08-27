@@ -9,6 +9,7 @@ from src.upwork_accounts.browser_worker import (
     get_cookies,
     get_driver,
     login,
+    restart_session,
 )
 
 
@@ -29,8 +30,13 @@ def get_page(url: str) -> str | None:
             could not be loaded.
     """
 
+    session_reset = False
     retries = 0
     while retries < 10:
+        if retries > 5 and not session_reset:
+            restart_session()
+            session_reset = True
+
         print(f"Getting page {url}")
         try:
             driver = get_driver()

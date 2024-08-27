@@ -11,6 +11,7 @@ import json
 import time
 from pathlib import Path
 from contextlib import contextmanager
+import shutil
 
 from rich import print
 from wrapworks import timeit, cwdtoenv
@@ -27,6 +28,10 @@ cwdtoenv()
 load_dotenv()
 
 from src.errors.common_errors import NotLoggedIn
+
+
+SELENIUM_CACHE_FOLDER = Path(Path.cwd(), "src", "upwork_accounts", "temp", "chrome")
+SELENIUM_CACHE_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 def get_cookies(make_simple_dict: bool = False) -> list[dict] | dict | list:
@@ -86,9 +91,7 @@ def save_cookies(cookies: list[dict]):
 @timeit()
 def get_driver() -> Chrome:
     """"""
-    cwd = Path.cwd()
-    folder = cwd / "src" / "upwork_accounts" / "temp" / "chrome"
-    folder.mkdir(parents=True, exist_ok=True)
+
     options = uc.ChromeOptions()
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -99,7 +102,10 @@ def get_driver() -> Chrome:
     options.add_argument("--disable-gpu")
 
     driver = uc.Chrome(
-        options=options, user_data_dir=folder, headless=False, use_subprocess=False
+        options=options,
+        user_data_dir=SELENIUM_CACHE_FOLDER,
+        headless=False,
+        use_subprocess=False,
     )
 
     return driver
@@ -130,7 +136,17 @@ class GetSessionDriver:
 
     def __enter__(self) -> Chrome:
 
-        self.driver = get_driver()
+        retries = 0
+        while retries < 5:
+            try:
+                self.driver = get_driver()
+                break
+            except Exception as e:
+                print(
+                    "Exception with Get Session Driver. retrying", type(e).__name__, e
+                )
+                restart_session()
+                retries += 1
         return self.driver
 
     def __exit__(self, *args):
@@ -213,5 +229,14 @@ def login(driver: Chrome | None = None):
         raise e
 
 
-if __name__ == "__main__":
+def restart_session():
+    """"""
+
+    print("Restarting Session")
+    shutil.rmtree(SELENIUM_CACHE_FOLDER)
+
     login()
+
+
+if __name__ == "__main__":
+    restart_session()
