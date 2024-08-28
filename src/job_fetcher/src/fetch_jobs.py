@@ -21,6 +21,7 @@ from pydantic import (
     field_validator,
 )
 import httpx
+import requests
 import ua_generator
 import dotenv
 
@@ -119,59 +120,48 @@ class JobList(BaseModel):
     )
 
 
-def get_auth_token(use_authorizer=False) -> str:
-    """
-    ### Description:
-        - Retrieves an authorization token to access the job API.
-        - Can optionally use an authorizer server for token fetching.
+def get_auth_token(use_authorizer=False) -> tuple[str, list[dict]]:
+    """"""
 
-    ### Args:
-        - `use_authorizer`: bool
-            Indicates whether to use the authorizer service.
+    if not use_authorizer:
+        print("Getting Auth token from postgres")
+        anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
+        base_url = os.getenv("POSTGREST_URL")
+        try:
+            url = base_url + "token_tracker"
+            headers = {
+                "apikey": anon_key,
+                "Authorization": f"Bearer {anon_key}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal",
+            }
+            params = {
+                "select": "token_value,cookies",
+                "token_name": "eq.UniversalSearch",
+                "order": "created_at.desc",
+                "limit": 1,
+            }
 
-    ### Returns:
-        - `str`
-            The retrieved authorization token.
+            response = httpx.get(url, headers=headers, params=params, timeout=3)
+            if response.json():
+                print(response.json())
+                data = response.json()[0]
+                return data["token_value"], data["cookies"]
+        except Exception as error:
+            print("Error fetching token from postgres", error)
 
-    ### Raises:
-        - `ValueError`:
-            If unable to retrieve the token.
-    """
+    print("Using authorizer to get a token")
+    res = httpx.post(
+        os.getenv("AUTHORIZER_URL"),
+        json={"secret": os.getenv("AUTH_SECRET")},
+        timeout=60,
+    )
+    if res.status_code != 200:
+        raise ValueError("Unable to get token via authorizer")
 
-    if use_authorizer:
-        print("Using authorizer to get a token")
-        res = httpx.post(
-            os.getenv("AUTHORIZER_URL"),
-            json={"secret": os.getenv("AUTH_SECRET")},
-            timeout=60,
-        )
-        if res.status_code != 200:
-            raise ValueError("Unable to get token via authorizer")
-        return res.json().get("token")
-
-    print("Getting Auth token from postgres")
-    anon_key = os.getenv("SUPABASE_CLIENT_ANON_KEY")
-    base_url = os.getenv("POSTGREST_URL")
-    try:
-        url = base_url + "token_tracker"
-        headers = {
-            "apikey": anon_key,
-            "Authorization": f"Bearer {anon_key}",
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal",
-        }
-        params = {
-            "select": "token_value",
-            "token_name": "eq.UniversalSearch",
-            "order": "created_at.desc",
-            "limit": 1,
-        }
-
-        response = httpx.get(url, headers=headers, params=params, timeout=3)
-
-        return response.json()[0]["token_value"]
-    except Exception as error:
-        print("Error fetching token from postgres", error)
+    print(res.json().get("token"))
+    data = res.json()
+    return data.get("token"), data.get("cookies")
 
 
 def download_proxies() -> list[str]:
@@ -190,83 +180,155 @@ def get_proxy(proxies: list[str]) -> str:
     return "http://" + user + ":" + password + "@" + ip + ":" + port
 
 
-def collect_jobs(auth_token: str, proxies: list[str]) -> dict | None:
-    """
-    ### Description:
-        - Collects job postings from the Upwork API using the provided authorization token.
-        - Makes a GraphQL request to fetch job details.
+def collect_jobs(
+    auth_token: str, proxies: list[str], cookies: list[dict]
+) -> dict | None:
+    """"""
 
-    ### Args:
-        - `auth_token`: str
-            The authorization token to include in the API request.
-
-    ### Returns:
-        - `dict | None`
-            A dictionary containing job postings or None if unsuccessful.
-    """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
+        "Accept": "*/*",
+        "Accept-Language": "en-GB,en;q=0.7,en-US;q=0.3",
+        "Accept-Encoding": "gzip",
+        "Referer": "https://www.upwork.com/nx/search/jobs/?",
+        "X-Upwork-Accept-Language": "en-US",
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + auth_token,
+    }
 
     url = "https://www.upwork.com/api/graphql/v1"
 
     payload = {
         "query": """
-            query VisitorJobSearch($requestVariables: VisitorJobSearchV1Request!) {
-                search {
-                universalSearchNuxt {
-                    visitorJobSearchV1(request: $requestVariables) {
-                    results {
-                        id
-                        title
-                        description
-                        ontologySkills {
-                        prefLabel
-                        }
-                        jobTile {
-                        job {
-                            id
-                            ciphertext: cipherText
-                            jobType
-                            hourlyBudgetMax
-                            hourlyBudgetMin
-                            contractorTier
-                            publishTime
-                            fixedPriceAmount {
-                            amount
-                            }
-                        }
-                        }
+    query VisitorJobSearch($requestVariables: VisitorJobSearchV1Request!) {
+        search {
+        universalSearchNuxt {
+            visitorJobSearchV1(request: $requestVariables) {
+            paging {
+                total
+                offset
+                count
+            }
+            
+        facets {
+        jobType 
+        {
+        key
+        value
+        }
+    
+        workload 
+        {
+        key
+        value
+        }
+    
+        clientHires 
+        {
+        key
+        value
+        }
+    
+        durationV3 
+        {
+        key
+        value
+        }
+    
+        amount 
+        {
+        key
+        value
+        }
+    
+        contractorTier 
+        {
+        key
+        value
+        }
+    
+        contractToHire 
+        {
+        key
+        value
+        }
+    
+        
+        }
+    
+            results {
+                id
+                title
+                description
+                relevanceEncoded
+                ontologySkills {
+                uid
+                parentSkillUid
+                prefLabel
+                prettyName: prefLabel
+                freeText
+                highlighted
+                }
+                
+                jobTile {
+                job {
+                    id
+                    ciphertext: cipherText
+                    jobType
+                    weeklyRetainerBudget
+                    hourlyBudgetMax
+                    hourlyBudgetMin
+                    hourlyEngagementType
+                    contractorTier
+                    sourcingTimestamp
+                    createTime
+                    publishTime
+                    
+                    hourlyEngagementDuration {
+                    rid
+                    label
+                    weeks
+                    mtime
+                    ctime
                     }
+                    fixedPriceAmount {
+                    isoCurrencyCode
+                    amount
+                    }
+                    fixedPriceEngagementDuration {
+                    id
+                    rid
+                    label
+                    weeks
+                    ctime
+                    mtime
                     }
                 }
                 }
             }
+            }
+        }
+        }
+    }
     """,
         "variables": {
             "requestVariables": {
                 "sort": "recency",
                 "highlight": True,
-                "paging": {"offset": 0, "count": 50},
+                "paging": {"offset": 0, "count": 10},
             }
         },
-    }
-    headers = {
-        "User-Agent": str(ua_generator.generate()),
-        "Accept": "*/*",
-        "Accept-Language": "en-GB,en;q=0.7,en-US;q=0.3",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Referer": "https://www.upwork.com/nx/search/jobs/",
-        "X-Upwork-Accept-Language": "en-US",
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + auth_token,
-        "Origin": "https://www.upwork.com",
-        "DNT": "1",
-        "Connection": "keep-alive",
     }
 
     retries = 0
     while retries < 10:
         try:
             response = httpx.post(
-                url, json=payload, headers=headers, proxy=get_proxy(proxies)
+                url,
+                json=payload,
+                headers=headers,
+                timeout=10,
+                cookies={item["name"]: item["value"] for item in cookies},
             )
 
             if response.status_code == 407:
@@ -361,9 +423,9 @@ def lambda_handler(event, context):
     while retries < 2:
         try:
             use_authorizor = retries > 0
-            auth_token = get_auth_token(use_authorizor)
+            auth_token, cookies = get_auth_token(use_authorizor)
             proxies = download_proxies()
-            raw_feed = collect_jobs(auth_token, proxies)
+            raw_feed = collect_jobs(auth_token, proxies, cookies)
             jobs = JobList(**raw_feed)
             break
         except Exception as e:
@@ -384,3 +446,5 @@ def lambda_handler(event, context):
 if __name__ == "__main__":
     data = lambda_handler(1, 1)
     print(data)
+
+    # get_auth_token(use_authorizer=False)

@@ -42,7 +42,7 @@ def get_cookies() -> list[dict]:
     return cookies
 
 
-def extract_search_token(cookies: list[dict]) -> tuple[str, int]:
+def extract_search_token(cookies: list[dict]) -> str:
     """
     ### Description:
         - Extracts the search token and its expiration from the cookies list.
@@ -62,10 +62,10 @@ def extract_search_token(cookies: list[dict]) -> tuple[str, int]:
     print("Extracting Auth Cookie")
     for i in cookies:
         if i["name"] == "UniversalSearchNuxt_vt":
-            return i["value"], i["expires"]
+            return i["value"]
 
 
-def cookie_handler() -> tuple[str, int]:
+def cookie_handler() -> tuple[str, list[dict]]:
     """
     ### Description:
         - Fetches an authentication token with retry logic.
@@ -87,16 +87,16 @@ def cookie_handler() -> tuple[str, int]:
     while retries < 3:
         try:
             cookies = get_cookies()
-            search_token, expires = extract_search_token(cookies)
+            search_token = extract_search_token(cookies)
             if not search_token:
                 raise ValueError("No token found. Might try again")
-            return search_token, expires
+            return search_token, cookies
         except Exception as e:
             print("Error fetching a token", type(e).__name__, e)
             retries += 1
 
 
-def publish_token(token: tuple[str, int]):
+def publish_token(token: str, cookies: list[dict]):
     """
     ### Description:
         - Publishes the retrieved token to a specified URL.
@@ -116,8 +116,8 @@ def publish_token(token: tuple[str, int]):
 
     payload = {
         "token_name": "UniversalSearch",
-        "token_value": token[0],
-        "expires": token[1],
+        "token_value": token,
+        "cookies": cookies,
     }
     headers = {
         "apikey": anon_key,
@@ -128,6 +128,7 @@ def publish_token(token: tuple[str, int]):
 
     response = httpx.post(url, json=payload, headers=headers)
     print(response.status_code)
+    print(response.text)
 
 
 def validate_request(event: dict | str):
@@ -180,15 +181,15 @@ def lambda_handler(event: dict, context):
             If no token is found after processing.
     """
     validate_request(event)
-    token = cookie_handler()
+    token, cookies = cookie_handler()
     if not token:
         raise ValueError("No token found")
     print("Token retrived sucessfully")
 
-    publish_token(token)
+    publish_token(token, cookies)
 
     print("All good. Returning token to invoker")
-    return json.dumps({"status_code": 200, "token": token[0]})
+    return json.dumps({"status_code": 200, "token": token, "cookies": cookies})
 
 
 if __name__ == "__main__":
